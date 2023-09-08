@@ -1,10 +1,26 @@
-# example values
+# MySQL server access data
+server.port: 8080
 
+spring.datasource.url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true&useUnicode=true&character_set_server=utf8mb4
+spring.datasource.username: root
+spring.datasource.password: 3507988Asd
+spring.jpa.generate-ddl: false
+#spring.jpa.hibernate.ddl-auto: update
+spring.jpa.hibernate.ddl-auto: create
+
+# показывает запросы к БД
+spring.jpa.show-sql: false
+
+# example values
 indexing-settings:
   sites:
-    - url: https://www.lenta.ru
-      name: Лента.ру
-    - url: https://www.skillbox.ru
+    #    - url: https://lenta.ru
+    #      name: Лента.ру
+    #    - url: https://skillbox.ru
+    #      name: Skillbox
+
+    - url: https://fidgroup.by
+      name: FidGroup
+    - url: https://skillbox.ru
       name: Skillbox
-    - url: https://www.playback.ru
-      name: PlayBack.Ru
+
