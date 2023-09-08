@@ -77,7 +77,6 @@ public class ParserSite extends RecursiveAction {
                             updateSiteModel(siteModel, StatusSiteIndex.INDEXING,
                                     LocalDateTime.now(), "lastError.get()");
                         }
-
                     });
                 } catch (Exception exception) {
                     log.error(exception.getMessage(), exception);

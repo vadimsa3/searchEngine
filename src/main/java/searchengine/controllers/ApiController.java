@@ -1,6 +1,7 @@
 package searchengine.controllers;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,10 +38,6 @@ public class ApiController {
     @Autowired
     private StatisticsService statisticsService;
 
-    // добавляем сервисы в контроллер для работы с ними
-//    private final StatisticsService statisticsService;
-//    private final SiteIndexingService siteIndexingService;
-
     /*  Метод возвращает статистику и другую служебную информацию о состоянии поисковых индексов и самого движка.
     Если ошибок индексации того или иного сайта нет, задавать ключ error не нужно.
     */
@@ -58,7 +55,6 @@ public class ApiController {
         siteIndexingService.startIndexingSite();
         return new ResponseEntity<>(HttpStatus.OK);
     }
-}
 
 //        SitesList sitesList = new SitesList();
 //        sitesList.getSites().forEach(sitesList::s);
@@ -88,20 +84,19 @@ public class ApiController {
 //        return ResponseEntity<>(HttpStatus.CREATED); // статус 201
 //    }
 
-
-
-/*Остановка текущей индексации — GET /api/stopIndexing
-Метод останавливает текущий процесс индексации (переиндексации).
-Если в настоящий момент индексация или переиндексация не происходит,
-метод возвращает соответствующее сообщение об ошибке.
-*/
-//    @GetMapping("/stopIndexing")
-//    public ResponseEntity<Object> stopIndexing() {
-//        if (siteIndexingService.stopIndexing()) {
-//            return new ResponseEntity<>(new Response(true), HttpStatus.OK);
-//
-//        }
-//    }
+    /*Остановка текущей индексации — GET /api/stopIndexing
+    Метод останавливает текущий процесс индексации (переиндексации).
+    Если в настоящий момент индексация или переиндексация не происходит,
+    метод возвращает соответствующее сообщение об ошибке.
+    */
+    @GetMapping("/stopIndexing")
+    public ResponseEntity<Object> stopIndexing() {
+        if (siteIndexingService.stopIndexingSite()) {
+            return new ResponseEntity<>(new Response(), HttpStatus.OK);
+        }
+        return null;
+    }
+}
 
 
 /*Добавление или обновление отдельной страницы — POST /api/indexPage

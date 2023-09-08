@@ -5,4 +5,5 @@ import org.springframework.stereotype.Component;
 @Component
 public interface SiteIndexingService {
     void startIndexingSite();
+    boolean stopIndexingSite();
 }

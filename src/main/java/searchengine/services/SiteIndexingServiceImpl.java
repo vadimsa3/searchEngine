@@ -3,7 +3,6 @@ package searchengine.services;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
@@ -43,11 +42,19 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     private Boolean threadsRunning = null;
 
     public void startIndexingSite() {
+
+        pageRepository.deleteAll();
+        siteRepository.deleteAll();
+
         sitesList.getSites().forEach((site) -> {
-//            this.dd(site.getUrl());
+
+//            deleteAllPagesBySite(site.getUrl());
+
             siteModel = createSiteModel(site);
             log.info("Start indexing site: " + site.getUrl());
             startParsingSite(site.getUrl());
+            log.info("Count pages from site " + siteModel.getName() + " - " + countPagesFromSite(siteModel.getId()));
+            findPagesIdBySiteIdInDB(siteModel.getId());
             log.info("Site indexing completed: " + site.getUrl());
         });
     }
@@ -56,7 +63,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         String[] tmpArray = url.split("/");
         domainName = tmpArray[2];
         queueLinks.add(url);
-        List<ParserSite> taskListLinkParsers = new ArrayList();
+        List<ParserSite> taskListLinkParsers = new ArrayList<>();
 
         for (int threads = 0; threads < Runtime.getRuntime().availableProcessors(); ++threads) {
             ParserSite parser = new ParserSite(queueLinks, visitedLinks, siteRepository,
@@ -93,53 +100,50 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         return domainName;
     }
 
-    public List<Integer> findSiteIdByUrlToDelete(String url) {
-        List<Integer> listSiteModelId = new ArrayList();
-        this.siteRepository.findAll().forEach((site) -> {
+    private long countPagesFromSite(Integer siteId) {
+        return pageRepository.count();
+    }
+
+    public List<Integer> findSitesIdByUrlInDB(String url) {
+        List<Integer> listSiteModelId = new ArrayList<>();
+        siteRepository.findAll().forEach(site -> {
             if (site.getUrl().startsWith(url)) {
                 listSiteModelId.add(site.getId());
-                System.out.println("Site to delete " + listSiteModelId.size());
+                System.out.println("Sites to data delete " + listSiteModelId.size());
             }
-
         });
-        Iterator var3 = listSiteModelId.iterator();
-
-        while (var3.hasNext()) {
-            Integer id = (Integer) var3.next();
-            System.out.println("Site to delete id " + id);
-        }
-
         return listSiteModelId;
     }
 
-    public List<Integer> findPageIdBySiteIdToDelete(List<Integer> listSiteModelId) {
-        List<Integer> listPageModelId = new ArrayList();
-
-        for (int i = 0; i <= listSiteModelId.size(); ++i) {
-            listPageModelId.add(this.pageRepository.findBySiteId((Integer) listSiteModelId.get(i)).getId());
-        }
-
-        Iterator var5 = listPageModelId.iterator();
-
-        while (var5.hasNext()) {
-            Integer id = (Integer) var5.next();
-            System.out.println("Page to delete id " + id);
-        }
-
-        return listPageModelId;
+    public void findPagesIdBySiteIdInDB(Integer siteId) {
+        List<Integer> listPageModelId = new ArrayList<>();
+        pageRepository.findAll().forEach(page -> {
+            if (page.getSiteId().getId() == siteId) {
+                listPageModelId.add(page.getId());
+            }
+        });
+        System.out.println("Pages " + listPageModelId.size());
     }
 
-    public void dd(String url) {
-        this.findPageIdBySiteIdToDelete(findSiteIdByUrlToDelete(url));
+    public void deleteAllPagesBySite(String url) {
+        siteRepository.findAll().forEach(siteModel -> {
+            if (siteModel.getUrl().startsWith(url)) {
+                pageRepository.findAll().forEach(pageModel -> {
+                    if (pageModel.getSiteId().getId() == siteModel.getId()) {
+                        pageRepository.deleteById(pageModel.getId());
+                    }
+                });
+            }
+        });
     }
 
-    public void stopIndexing() {
+    public boolean stopIndexingSite() {
         if (!threadsRunning) {
             interrupted = true;
             String error = "Ошибка индексации! Индексация остановлена пользователем.";
             lastError.put(siteModel.getId(), error);
         }
-
+        return false;
     }
 
     private boolean isInterrupted() {

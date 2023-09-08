@@ -1,5 +1,9 @@
 package searchengine.model;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -11,8 +15,10 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
-@Entity
-@Table(name = "lemma_index")
+@Entity(name = "lemma_index")
+@Getter
+@Setter
+@NoArgsConstructor
 
 public class LemmaModel {
     @Id
@@ -29,39 +35,4 @@ public class LemmaModel {
 
     @Column(nullable = false)
     private int frequency;
-
-    public LemmaModel() {
-    }
-
-    public int getId() {
-        return this.id;
-    }
-
-    public SiteModel getSiteId() {
-        return this.siteId;
-    }
-
-    public String getLemma() {
-        return this.lemma;
-    }
-
-    public int getFrequency() {
-        return this.frequency;
-    }
-
-    public void setId(final int id) {
-        this.id = id;
-    }
-
-    public void setSiteId(final SiteModel siteId) {
-        this.siteId = siteId;
-    }
-
-    public void setLemma(final String lemma) {
-        this.lemma = lemma;
-    }
-
-    public void setFrequency(final int frequency) {
-        this.frequency = frequency;
-    }
 }
