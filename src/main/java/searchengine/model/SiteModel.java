@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import javax.persistence.*;
 
 @Entity(name = "site_index")
@@ -14,10 +15,11 @@ import javax.persistence.*;
 
 public class SiteModel {
     @Id
+    @Column(nullable = false)
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-    @Column(columnDefinition = "ENUM('INDEXING', 'INDEXED', 'FAILED')", name = "status_index")
+    @Column(columnDefinition = "ENUM('INDEXING', 'INDEXED', 'FAILED')", name = "status_index", nullable = false)
     @Enumerated(EnumType.STRING)
     private StatusSiteIndex statusSiteIndex;
 
@@ -32,4 +34,8 @@ public class SiteModel {
 
     @Column(columnDefinition = "VARCHAR(255)", name = "site_name", nullable = false)
     private String name;
+
+    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
+    private List<PageModel> pageModel;
+
 }

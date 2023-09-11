@@ -14,8 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
+import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
 import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.PageRepository;
@@ -32,6 +34,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     private SiteRepository siteRepository;
     @Autowired
     private PageRepository pageRepository;
+
     private static String domainName;
     private static Set<String> visitedLinks = ConcurrentHashMap.newKeySet();
     private static Queue<String> queueLinks = new ConcurrentLinkedQueue();
@@ -83,6 +86,9 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
             }
 
         });
+
+        deleteAllPagesBySiteId(getAllIdPagesBySiteId(siteModel));
+
     }
 
     private SiteModel createSiteModel(Site site) {
@@ -123,6 +129,18 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
             }
         });
         System.out.println("Pages " + listPageModelId.size());
+    }
+
+    public List<Integer> getAllIdPagesBySiteId(SiteModel siteModel) {
+        List<Integer> idPages = new ArrayList<>();
+        pageRepository.findAllIdPagesBySiteId(siteModel).forEach(page -> {
+            idPages.add(page.getId());
+        });
+        return idPages;
+    }
+
+    public void deleteAllPagesBySiteId(List<Integer> idPages) {
+        pageRepository.deleteAllById(idPages);
     }
 
     public void deleteAllPagesBySite(String url) {
