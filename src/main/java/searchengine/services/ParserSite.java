@@ -48,10 +48,10 @@ public class ParserSite extends RecursiveAction {
 
     protected void compute() {
         while(true) {
-            String link = (String) queueLinks.poll();
+            String link = queueLinks.poll();
             if (link == null) {
                 status = "waiting";
-                updateSiteModel(siteModel, StatusSiteIndex.INDEXED, LocalDateTime.now(), "lastError.get()");
+                updateSiteModel(siteModel, StatusSiteIndex.INDEXED, LocalDateTime.now(), lastError.get(siteModel.getId()));
                 return;
             }
 
@@ -75,7 +75,7 @@ public class ParserSite extends RecursiveAction {
                                     siteRepository, pageRepository, siteModel, lastError);
                             parserSite.fork();
                             updateSiteModel(siteModel, StatusSiteIndex.INDEXING,
-                                    LocalDateTime.now(), "lastError.get()");
+                                    LocalDateTime.now(), lastError.get(siteModel.getId()));
                         }
                     });
                 } catch (Exception exception) {

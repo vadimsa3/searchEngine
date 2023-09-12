@@ -14,10 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
-import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
 import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.PageRepository;
@@ -45,19 +43,14 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     private Boolean threadsRunning = null;
 
     public void startIndexingSite() {
-
         pageRepository.deleteAll();
         siteRepository.deleteAll();
 
         sitesList.getSites().forEach((site) -> {
-
-//            deleteAllPagesBySite(site.getUrl());
-
             siteModel = createSiteModel(site);
             log.info("Start indexing site: " + site.getUrl());
             startParsingSite(site.getUrl());
             log.info("Count pages from site " + siteModel.getName() + " - " + countPagesFromSite(siteModel.getId()));
-            findPagesIdBySiteIdInDB(siteModel.getId());
             log.info("Site indexing completed: " + site.getUrl());
         });
     }
@@ -74,28 +67,24 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
             taskListLinkParsers.add(parser);
         }
 
-        ForkJoinPool var10001 = new ForkJoinPool();
-        taskListLinkParsers.forEach(var10001::invoke);
+        ForkJoinPool forkJoinPool = new ForkJoinPool();
+        taskListLinkParsers.forEach(forkJoinPool::invoke);
         taskListLinkParsers.forEach((parserSite) -> {
             if (parserSite.getStatus().equals("working")) {
                 try {
                     Thread.sleep(1000L);
-                } catch (InterruptedException var2) {
-                    throw new RuntimeException(var2);
+                } catch (InterruptedException interruptedException) {
+                    throw new RuntimeException(interruptedException);
                 }
             }
-
         });
-
-        deleteAllPagesBySiteId(getAllIdPagesBySiteId(siteModel));
-
     }
 
     private SiteModel createSiteModel(Site site) {
         SiteModel siteModel = new SiteModel();
         siteModel.setStatusSiteIndex(StatusSiteIndex.INDEXING);
         siteModel.setStatusTime(LocalDateTime.now());
-        siteModel.setLastError((String) lastError.get(siteModel.getId()));
+        siteModel.setLastError(lastError.get(siteModel.getId()));
         siteModel.setUrl(site.getUrl());
         siteModel.setName(site.getName());
         siteRepository.save(siteModel);
@@ -106,54 +95,30 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         return domainName;
     }
 
-    private long countPagesFromSite(Integer siteId) {
+    public long countPagesFromSite(Integer siteId) {
         return pageRepository.count();
     }
 
-    public List<Integer> findSitesIdByUrlInDB(String url) {
-        List<Integer> listSiteModelId = new ArrayList<>();
-        siteRepository.findAll().forEach(site -> {
-            if (site.getUrl().startsWith(url)) {
-                listSiteModelId.add(site.getId());
-                System.out.println("Sites to data delete " + listSiteModelId.size());
-            }
-        });
-        return listSiteModelId;
-    }
-
-    public void findPagesIdBySiteIdInDB(Integer siteId) {
-        List<Integer> listPageModelId = new ArrayList<>();
-        pageRepository.findAll().forEach(page -> {
-            if (page.getSiteId().getId() == siteId) {
-                listPageModelId.add(page.getId());
-            }
-        });
-        System.out.println("Pages " + listPageModelId.size());
-    }
-
-    public List<Integer> getAllIdPagesBySiteId(SiteModel siteModel) {
-        List<Integer> idPages = new ArrayList<>();
-        pageRepository.findAllIdPagesBySiteId(siteModel).forEach(page -> {
-            idPages.add(page.getId());
-        });
-        return idPages;
-    }
-
-    public void deleteAllPagesBySiteId(List<Integer> idPages) {
-        pageRepository.deleteAllById(idPages);
-    }
-
-    public void deleteAllPagesBySite(String url) {
-        siteRepository.findAll().forEach(siteModel -> {
-            if (siteModel.getUrl().startsWith(url)) {
-                pageRepository.findAll().forEach(pageModel -> {
-                    if (pageModel.getSiteId().getId() == siteModel.getId()) {
-                        pageRepository.deleteById(pageModel.getId());
-                    }
-                });
-            }
-        });
-    }
+//    public SiteModel getOldSiteModelByUrlSite(String urlSite) {
+//        siteRepository.findAll().forEach(siteModel -> {
+//            if (siteModel.getUrl().startsWith(urlSite)) {
+//            }
+//        });
+//        return siteModel;
+//    }
+//
+//
+//    public List<Integer> getAllIdPagesBySiteId(String urlSite) {
+//        List<Integer> idPages = new ArrayList<>();
+//        pageRepository.findAllIdPagesBySiteId(getOldSiteModelByUrlSite(urlSite)).forEach(page -> {
+//            idPages.add(page.getId());
+//        });
+//        return idPages;
+//    }
+//
+//    public void deleteAllPagesBySiteId(List<Integer> idPages) {
+//        pageRepository.deleteAllById(idPages);
+//    }
 
     public boolean stopIndexingSite() {
         if (!threadsRunning) {
@@ -162,12 +127,23 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
             lastError.put(siteModel.getId(), error);
         }
         return false;
-    }
 
-    private boolean isInterrupted() {
-        return threadsRunning ? interrupted : true;
+//        if(!isInterrupted) {
+//
+//            for (String singleLink : getUrl(rootUrl)) {
+//                if (!parsedLinks.contains(singleLink)) {
+//                    SiteParser task = new SiteParser(sin.......
+//                }
+//                if (isInterrupted) {
+//                    taskList.clear();
+//                }
+//                ну и в stopIndexing isInterrupted = true
+//            }
+//
+//            private boolean isInterrupted () {
+//                return threadsRunning ? interrupted : true;
     }
 
     public SiteIndexingServiceImpl() {
-    }
-}
+            }
+        }

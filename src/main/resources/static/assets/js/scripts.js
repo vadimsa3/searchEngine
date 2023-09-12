@@ -1526,7 +1526,7 @@ var API = function(){
         },
         search: {
             address: '/search',
-            type: 'get',
+            type: 'GET',
             action: function(result, $this, data){
                 if (result.result){
                     if ($this.next('.API-error').length) {
@@ -1575,7 +1575,7 @@ var API = function(){
         },
         statistics: {
             address: '/statistics',
-            type: 'get',
+            type: 'GET',
             action: function(result, $this){
                 if (result.result){
                     if ($this.next('.API-error').length) {
