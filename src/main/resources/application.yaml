@@ -20,8 +20,11 @@ indexing-settings:
     #      name: Skillbox
 
     - url: https://fidgroup.by
-      name: FidGroup
+      name: Группа ФИД - FidGroup
 
-    - url: https://skillbox.ru
-      name: Skillbox
+    - url: https://fidmash.ru
+      name: ФИДМАШ - FidMash
+
+#    - url: https://skillbox.ru
+#      name: Skillbox
 

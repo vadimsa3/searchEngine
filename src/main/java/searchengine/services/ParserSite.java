@@ -27,6 +27,7 @@ public class ParserSite extends RecursiveAction {
     private SiteRepository siteRepository;
     @Autowired
     private SiteModel siteModel;
+
     private Queue<String> queueLinks;
     private Set<String> visitedLinks;
     private Map<Integer, String> lastError;
@@ -48,7 +49,7 @@ public class ParserSite extends RecursiveAction {
 
     protected void compute() {
         while(true) {
-            String link = queueLinks.poll();
+            String link = queueLinks.poll(); // забираем ссылку из очереди
             if (link == null) {
                 status = "waiting";
                 updateSiteModel(siteModel, StatusSiteIndex.INDEXED, LocalDateTime.now(), lastError.get(siteModel.getId()));
@@ -58,7 +59,7 @@ public class ParserSite extends RecursiveAction {
             if (!visitedLinks.contains(link)) {
                 status = "working";
                 visitedLinks.add(link);
-                log.info(link);
+                log.info("Site link - " + link);
 
                 try {
                     Document document = Jsoup.connect(link).ignoreHttpErrors(true).get();

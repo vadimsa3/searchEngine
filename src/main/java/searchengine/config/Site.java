@@ -1,11 +1,11 @@
 package searchengine.config;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.stereotype.Component;
 
-@Setter
-@Getter
+@Data
 /* Cпринг будет сканировать классы по спринговым аннотациям и создает бины по найденым классам (экземпляры класса).
  * */
 @Component

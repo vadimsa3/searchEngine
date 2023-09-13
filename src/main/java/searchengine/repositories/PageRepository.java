@@ -12,4 +12,5 @@ public interface PageRepository extends CrudRepository<PageModel, Integer> {
     Optional<PageModel> findByPath(String path);
     PageModel findBySiteId(Integer id);
     List<PageModel> findAllIdPagesBySiteId(SiteModel siteModel);
+    void deleteAllDataById(Integer id);
 }

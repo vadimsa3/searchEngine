@@ -1,5 +1,6 @@
 package searchengine.model;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -7,8 +8,7 @@ import lombok.Setter;
 import javax.persistence.*;
 
 @Entity(name = "page_index")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @Table(name = "page_index", indexes = @Index(columnList = "path_page, site_id", name = "path_index", unique = true))
 

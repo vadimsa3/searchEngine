@@ -43,10 +43,9 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     private Boolean threadsRunning = null;
 
     public void startIndexingSite() {
-        pageRepository.deleteAll();
-        siteRepository.deleteAll();
 
         sitesList.getSites().forEach((site) -> {
+            deleteOldDataByUrlSite(site.getUrl());
             siteModel = createSiteModel(site);
             log.info("Start indexing site: " + site.getUrl());
             startParsingSite(site.getUrl());
@@ -69,10 +68,11 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 
         ForkJoinPool forkJoinPool = new ForkJoinPool();
         taskListLinkParsers.forEach(forkJoinPool::invoke);
-        taskListLinkParsers.forEach((parserSite) -> {
+        // !!! execute организует (асинхронное) выполнение данной задачи (выводит ошибку 500 во фронте) !!!
+        taskListLinkParsers.forEach(parserSite -> {
             if (parserSite.getStatus().equals("working")) {
                 try {
-                    Thread.sleep(1000L);
+                    Thread.sleep(1000L); // переводит текущий поток в режим ожидания, замедление
                 } catch (InterruptedException interruptedException) {
                     throw new RuntimeException(interruptedException);
                 }
@@ -99,6 +99,14 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         return pageRepository.count();
     }
 
+    public void deleteOldDataByUrlSite(String urlSite) {
+        SiteModel siteModelToDelete = siteRepository.findSiteModelByUrl(urlSite);
+        if (siteModelToDelete != null) {
+            pageRepository.deleteAllDataById(siteModelToDelete.getId());
+            siteRepository.delete(siteModelToDelete);
+        }
+    }
+
 //    public SiteModel getOldSiteModelByUrlSite(String urlSite) {
 //        siteRepository.findAll().forEach(siteModel -> {
 //            if (siteModel.getUrl().startsWith(urlSite)) {
@@ -120,10 +128,12 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 //        pageRepository.deleteAllById(idPages);
 //    }
 
+    @Override
     public boolean stopIndexingSite() {
         if (!threadsRunning) {
             interrupted = true;
-            String error = "Ошибка индексации! Индексация остановлена пользователем.";
+            log.error("Indexing error! Indexing has been stopped by the user.");
+            String error = "Indexing error! Indexing has been stopped by the user.";
             lastError.put(siteModel.getId(), error);
         }
         return false;
@@ -143,7 +153,4 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 //            private boolean isInterrupted () {
 //                return threadsRunning ? interrupted : true;
     }
-
-    public SiteIndexingServiceImpl() {
-            }
-        }
+}

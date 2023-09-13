@@ -8,9 +8,6 @@ import java.util.List;
 
 @Component
 public interface SiteIndexingService {
-
     void startIndexingSite();
-
     boolean stopIndexingSite();
-
 }

@@ -1,5 +1,6 @@
 package searchengine.model;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -9,8 +10,7 @@ import java.util.List;
 import javax.persistence.*;
 
 @Entity(name = "site_index")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 
 public class SiteModel {
