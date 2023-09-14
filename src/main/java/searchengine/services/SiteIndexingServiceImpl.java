@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
+import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
 import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.PageRepository;
@@ -40,26 +41,26 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     private SiteModel siteModel;
     private String status = null;
     private Boolean interrupted = false;
-    private Boolean threadsRunning = null;
+    private Boolean isThreadsRunning = null;
 
-    public void startIndexingSite() {
-
+    public boolean startIndexingSite() {
         sitesList.getSites().forEach((site) -> {
             deleteOldDataByUrlSite(site.getUrl());
             siteModel = createSiteModel(site);
             log.info("Start indexing site: " + site.getUrl());
-            startParsingSite(site.getUrl());
-            log.info("Count pages from site " + siteModel.getName() + " - " + countPagesFromSite(siteModel.getId()));
+            isThreadsRunning = startParsingSite(site.getUrl());
+            log.info("TEST Situation -" + isThreadsRunning.toString());
+            log.info("Count pages from site " + siteModel.getName() + " - " + countPagesBySiteId(siteModel));
             log.info("Site indexing completed: " + site.getUrl());
         });
+        return isThreadsRunning;
     }
 
-    public void startParsingSite(String url) {
+    public boolean startParsingSite(String url) {
         String[] tmpArray = url.split("/");
         domainName = tmpArray[2];
         queueLinks.add(url);
         List<ParserSite> taskListLinkParsers = new ArrayList<>();
-
         for (int threads = 0; threads < Runtime.getRuntime().availableProcessors(); ++threads) {
             ParserSite parser = new ParserSite(queueLinks, visitedLinks, siteRepository,
                     pageRepository, siteModel, lastError);
@@ -67,17 +68,22 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         }
 
         ForkJoinPool forkJoinPool = new ForkJoinPool();
-        taskListLinkParsers.forEach(forkJoinPool::invoke);
-        // !!! execute организует (асинхронное) выполнение данной задачи (выводит ошибку 500 во фронте) !!!
-        taskListLinkParsers.forEach(parserSite -> {
-            if (parserSite.getStatus().equals("working")) {
-                try {
-                    Thread.sleep(1000L); // переводит текущий поток в режим ожидания, замедление
-                } catch (InterruptedException interruptedException) {
-                    throw new RuntimeException(interruptedException);
+        if (!forkJoinPool.isShutdown()) { // Returns true if this executor terminated
+            taskListLinkParsers.forEach(forkJoinPool::invoke);
+            // !!! execute организует (асинхронное) выполнение данной задачи (выводит ошибку 500 во фронте) !!!
+            taskListLinkParsers.forEach(parserSite -> {
+                if (parserSite.getStatus().equals("working")) {
+                    try {
+                        Thread.sleep(1000L); // переводит текущий поток в режим ожидания, замедление
+                    } catch (InterruptedException interruptedException) {
+                        throw new RuntimeException(interruptedException);
+                    }
                 }
-            }
-        });
+            });
+            return false;
+        } else {
+            return true;
+        }
     }
 
     private SiteModel createSiteModel(Site site) {
@@ -95,15 +101,16 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         return domainName;
     }
 
-    public long countPagesFromSite(Integer siteId) {
-        return pageRepository.count();
+    public Integer countPagesBySiteId(SiteModel siteModel) {
+        List<PageModel> pages = pageRepository.findAllPagesBySiteId(siteModel);
+        return pages.size();
     }
 
     public void deleteOldDataByUrlSite(String urlSite) {
         SiteModel siteModelToDelete = siteRepository.findSiteModelByUrl(urlSite);
         if (siteModelToDelete != null) {
-            pageRepository.deleteAllDataById(siteModelToDelete.getId());
             siteRepository.delete(siteModelToDelete);
+            pageRepository.deleteAllDataById(siteModelToDelete.getId());
         }
     }
 
@@ -130,13 +137,32 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 
     @Override
     public boolean stopIndexingSite() {
-        if (!threadsRunning) {
+        if (!isThreadsRunning) {
             interrupted = true;
             log.error("Indexing error! Indexing has been stopped by the user.");
             String error = "Indexing error! Indexing has been stopped by the user.";
             lastError.put(siteModel.getId(), error);
         }
         return false;
+    }
+
+    @Override
+    public boolean startIndexSingleSite(Site site) {
+        SiteModel oldSiteModel = siteRepository.findSiteModelByUrl(site.getUrl());
+        if (oldSiteModel == null) {
+            siteModel = createSiteModel(site);
+            log.info("Start indexing single site: " + site.getUrl());
+            isThreadsRunning = startParsingSite(site.getUrl());
+            log.info("TEST Situation -" + isThreadsRunning.toString());
+            log.info("Count pages from site " + siteModel.getName() + " - " + countPagesBySiteId(siteModel));
+            log.info("Site indexing completed: " + site.getUrl());
+        } else {
+            deleteOldDataByUrlSite(site.getUrl());
+            isThreadsRunning = startParsingSite(site.getUrl());  // reindexing
+        }
+        return isThreadsRunning;
+    }
+}
 
 //        if(!isInterrupted) {
 //
@@ -152,5 +178,3 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 //
 //            private boolean isInterrupted () {
 //                return threadsRunning ? interrupted : true;
-    }
-}

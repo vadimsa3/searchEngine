@@ -15,6 +15,8 @@ import searchengine.services.SiteIndexingService;
 import searchengine.services.StatisticsService;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 // тело ответа будет конвертироваться в JSON формат
 // запрос будет ожидать JSON в теле запроса
@@ -52,21 +54,36 @@ public class ApiController {
 
     /*Запуск сервиса полной индексации — GET /api/startIndexing
     Метод запускает полную индексацию всех сайтов или полную переиндексацию, если они уже проиндексированы.
-    Если в настоящий момент индексация или переиндексация уже запущена,
-    етод возвращает соответствующее сообщение об ошибке.
+    Если в настоящий момент индексация или переиндексация уже запущена, возвращает соответствующее сообщение об ошибке.
     */
     @GetMapping("/startIndexing")
     public ResponseEntity<String> startIndexing() throws IOException {
-        siteIndexingService.startIndexingSite();
-        return new ResponseEntity<>(HttpStatus.OK);
+        Map<String, Boolean> response = new HashMap<>();
+        boolean isIndexing = siteIndexingService.startIndexingSite();
+        if (isIndexing) {
+            String errorMessage = "Indexing has already started";
+            return ResponseEntity.ok().body("{\"result\": false, \"error\":\"" + errorMessage + "\"}");
+        } else {
+            return ResponseEntity.ok().body("{\"result\": true}");
+        }
     }
 
-//        SitesList sitesList = new SitesList();
-//        sitesList.getSites().forEach(sitesList::s);
-//
-//        for (Site site : sitesList.getSites()) {
-//            dBSiteRepository.save(site);
-//        }
+    /*Остановка текущей индексации — GET /api/stopIndexing
+    Метод останавливает текущий процесс индексации (переиндексации).
+    Если в настоящий момент индексация или переиндексация не происходит, возвращает соответствующее сообщение об ошибке.
+    */
+    @GetMapping("/stopIndexing")
+    public ResponseEntity<String> stopIndexing() {
+        boolean isActive = siteIndexingService.stopIndexingSite();
+        if (isActive) {
+            return ResponseEntity.ok().body("{\"result\": true}");
+        } else {
+            String errorMessage = "Indexing is not running";
+            return ResponseEntity.ok().body("{\"result\": false, \"error\":\"" + errorMessage + "\"}");
+        }
+    }
+}
+
 //
 //            Map<String, String> response = new HashMap<>();
 //            SitesList sitesList = new SitesList();
@@ -88,20 +105,6 @@ public class ApiController {
 //        DBSiteRepository.save(site);
 //        return ResponseEntity<>(HttpStatus.CREATED); // статус 201
 //    }
-
-    /*Остановка текущей индексации — GET /api/stopIndexing
-    Метод останавливает текущий процесс индексации (переиндексации).
-    Если в настоящий момент индексация или переиндексация не происходит,
-    метод возвращает соответствующее сообщение об ошибке.
-    */
-    @GetMapping("/stopIndexing")
-    public ResponseEntity<Object> stopIndexing() {
-        if (siteIndexingService.stopIndexingSite()) {
-            return new ResponseEntity<>(new Response(), HttpStatus.OK);
-        }
-        return null;
-    }
-}
 
 
 /*Добавление или обновление отдельной страницы — POST /api/indexPage

@@ -52,15 +52,14 @@ public class ParserSite extends RecursiveAction {
             String link = queueLinks.poll(); // забираем ссылку из очереди
             if (link == null) {
                 status = "waiting";
-                updateSiteModel(siteModel, StatusSiteIndex.INDEXED, LocalDateTime.now(), lastError.get(siteModel.getId()));
+                updateSiteModel(siteModel, StatusSiteIndex.INDEXED, LocalDateTime.now(),
+                        lastError.get(siteModel.getId()));
                 return;
             }
-
             if (!visitedLinks.contains(link)) {
                 status = "working";
                 visitedLinks.add(link);
                 log.info("Site link - " + link);
-
                 try {
                     Document document = Jsoup.connect(link).ignoreHttpErrors(true).get();
                     createPageModel(link, document, siteModel);

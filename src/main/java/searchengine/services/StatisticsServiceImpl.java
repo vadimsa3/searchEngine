@@ -14,6 +14,7 @@ import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -36,6 +37,7 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     @Override
     public StatisticsResponse getStatistics() {
+
         String[] statuses = {"INDEXED", "FAILED", "INDEXING"};
         String[] errors = {
                 "Ошибка индексации: главная страница сайта не доступна",
@@ -61,7 +63,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             item.setUrl(site.getUrl());   // OK
 
             // ----
-            long pages = pageRepository.count();
+            long pages = pageRepository.count(); // общее кл-во страниц
             // ----
 
 //            int pages = random.nextInt(1_000); // доработать на реальную цифру
@@ -74,21 +76,20 @@ public class StatisticsServiceImpl implements StatisticsService {
             item.setPages(pages); // OK
             item.setLemmas(lemmas); // OK
 
-            // ----
-            item.setStatus(String.valueOf(siteModel.getStatusSiteIndex()));
-            // ----
+//            // ----
+//            item.setStatus(String.valueOf(siteModel.getStatusSiteIndex()));
+//            // ----
 
-//            item.setStatus(statuses[i % 3]); // доработать на реальный статус
+            item.setStatus(statuses[i % 3]); // доработать на реальный статус
 
-            item.setError(siteModel.getLastError() != null ? siteModel.getLastError() : "No errors found!");
+//            item.setError(siteModel.getLastError() != null ? siteModel.getLastError() : "No errors found!");
 
 
-//            item.setError(errors[i % 3]); // доработать на реальную ошибку
+            item.setError(errors[i % 3]); // доработать на реальную ошибку
 
-            item.setStatusTime(siteModel.getStatusTime());
+//            item.setStatusTime(siteModel.getStatusTime());
 
-//            item.setStatusTime(System.currentTimeMillis() -
-//                    (random.nextInt(10_000))); // доработать на реальное время
+            item.setStatusTime(LocalDateTime.now()); // доработать на реальное время
 
             total.setPages(total.getPages() + pages);
             total.setLemmas(total.getLemmas() + lemmas);
