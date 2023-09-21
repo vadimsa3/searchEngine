@@ -10,6 +10,7 @@ import searchengine.dto.statistics.StatisticsData;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.dto.statistics.TotalStatistics;
 import searchengine.model.SiteModel;
+import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
@@ -25,25 +26,23 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     @Autowired
     private SiteRepository siteRepository;
-
     @Autowired
     private PageRepository pageRepository;
-
     @Autowired
     private LemmaRepository lemmaRepository;
 
-    private final Random random = new Random();
+    private final Random random = new Random(); // удалить после корректировки лемм
     private final SitesList sites;
 
     @Override
     public StatisticsResponse getStatistics() {
 
-        String[] statuses = {"INDEXED", "FAILED", "INDEXING"};
-        String[] errors = {
-                "Ошибка индексации: главная страница сайта не доступна",
-                "Ошибка индексации: сайт не доступен",
-                ""
-        };
+//        String[] statuses = {"INDEXED", "FAILED", "INDEXING"};
+//        String[] errors = {
+//                "Ошибка индексации: главная страница сайта не доступна",
+//                "Ошибка индексации: сайт не доступен",
+//                ""
+//        };
 
         TotalStatistics total = new TotalStatistics();
         total.setSites(sites.getSites().size());
@@ -54,29 +53,37 @@ public class StatisticsServiceImpl implements StatisticsService {
         for (int i = 0; i < sitesList.size(); i++) {
             Site site = sitesList.get(i);
             SiteModel siteModel = siteRepository.findSiteModelByUrl(site.getUrl());
-
             DetailedStatisticsItem item = new DetailedStatisticsItem();
-            item.setName(site.getName()); // OK
-            item.setUrl(site.getUrl());   // OK
+            item.setName(site.getName());
+            item.setUrl(site.getUrl());
 
-            // ----
-            long pages = pageRepository.count(); // общее кл-во страниц !! ИСПРАВИТЬ
-            // ----
+            long sitePages = random.nextInt(1_000); // ТО CORRECT !!!
 
-//            int pages = random.nextInt(1_000); // доработать на реальную цифру
 
 //            // ----
 //            long lemmas = lemmaRepository.count();
 //            // ----
 
-            long lemmas = pages * random.nextInt(1_000); // доработать на реальную цифру
-            item.setPages(pages); // OK
-            item.setLemmas(lemmas); // OK
-            item.setStatus(siteModel.getStatusSiteIndex()); // OK
-            item.setError(siteModel.getLastError() != null ? siteModel.getLastError() : "No errors found!"); // OK
-            item.setStatusTime(siteModel.getStatusTime());
+            long lemmas = sitePages * random.nextInt(1_000); // доработать на реальную цифру
+//            item.setPages(sitePages);
+//            item.setLemmas(lemmas);
 
-            total.setPages(total.getPages() + pages);
+            if (siteModel != null) {
+                item.setStatus(siteModel.getStatusSiteIndex());
+                item.setPages(sitePages);
+                item.setLemmas(lemmas);
+                item.setError(siteModel.getLastError() != null ? siteModel.getLastError() : "No errors found!");
+                item.setStatusTime(siteModel.getStatusTime());
+            } else {
+                item.setStatus(StatusSiteIndex.FAILED);
+                item.setPages(0);
+                item.setLemmas(0);
+                item.setError("Site not yet been indexed!");
+                item.setStatusTime(LocalDateTime.now());
+            }
+
+            long allPages = pageRepository.count(); // общее кл-во страниц !! ИСПРАВИТЬ
+            total.setPages(total.getPages() + allPages);
             total.setLemmas(total.getLemmas() + lemmas);
             detailed.add(item);
         }
