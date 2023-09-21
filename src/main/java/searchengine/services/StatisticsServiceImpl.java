@@ -77,7 +77,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             item.setLemmas(lemmas); // OK
 
 //            // ----
-//            item.setStatus(String.valueOf(siteModel.getStatusSiteIndex()));
+            item.setStatus(String.valueOf(siteModel.getStatusSiteIndex()));
 //            // ----
 
             item.setStatus(statuses[i % 3]); // доработать на реальный статус

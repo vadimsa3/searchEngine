@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.RecursiveAction;
+
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -17,9 +19,9 @@ import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 
-public class ParserSite extends RecursiveAction {
+public class ParserSiteService extends RecursiveAction {
 
-    private static final Logger log = LoggerFactory.getLogger(ParserSite.class);
+    private static final Logger log = LoggerFactory.getLogger(ParserSiteService.class);
 
     @Autowired
     private PageRepository pageRepository;
@@ -32,9 +34,10 @@ public class ParserSite extends RecursiveAction {
     private Set<String> visitedLinks;
     private Map<Integer, String> lastError;
     private String status = null;
+    private Integer code = null;
 
-    public ParserSite(Queue<String> queueLinks, Set<String> visitedLinks, SiteRepository siteRepository,
-                      PageRepository pageRepository, SiteModel siteModel, Map<Integer, String> lastError) {
+    public ParserSiteService(Queue<String> queueLinks, Set<String> visitedLinks, SiteRepository siteRepository,
+                             PageRepository pageRepository, SiteModel siteModel, Map<Integer, String> lastError) {
         this.queueLinks = queueLinks;
         this.visitedLinks = visitedLinks;
         this.siteRepository = siteRepository;
@@ -61,8 +64,11 @@ public class ParserSite extends RecursiveAction {
                 visitedLinks.add(link);
                 log.info("Site link - " + link);
                 try {
-                    Document document = Jsoup.connect(link).ignoreHttpErrors(true).get();
-                    createPageModel(link, document, siteModel);
+                    Connection.Response response = Jsoup.connect(link).ignoreHttpErrors(true).execute();
+                    int statusCode = response.statusCode();
+                    Document document = response.parse();
+//                    Document document = Jsoup.connect(link).ignoreHttpErrors(true).get();
+                    createPageModel(link, document, siteModel, statusCode);
                     Elements urls = document.getElementsByTag("a");
                     urls.forEach((innerLink) -> {
                         String linkString = innerLink.absUrl("href");
@@ -71,9 +77,9 @@ public class ParserSite extends RecursiveAction {
                                 && linkString.startsWith(link)
                                 && !isFile(linkString)) {
                             queueLinks.add(linkString);
-                            ParserSite parserSite = new ParserSite(queueLinks, visitedLinks,
+                            ParserSiteService parserSiteService = new ParserSiteService(queueLinks, visitedLinks,
                                     siteRepository, pageRepository, siteModel, lastError);
-                            parserSite.fork();
+                            parserSiteService.fork();
                             updateSiteModel(siteModel, StatusSiteIndex.INDEXING,
                                     LocalDateTime.now(), lastError.get(siteModel.getId()));
                         }
@@ -91,11 +97,11 @@ public class ParserSite extends RecursiveAction {
         return link.matches(reg);
     }
 
-    private void createPageModel(String url, Document document, SiteModel siteModel) {
+    private void createPageModel(String url, Document document, SiteModel siteModel, Integer statusCode) {
         PageModel pageModel = new PageModel();
         pageModel.setSiteId(siteModel);
         pageModel.setPath(url.substring(siteModel.getUrl().length()));
-        pageModel.setCode(200);
+        pageModel.setCode(statusCode);
         pageModel.setContent(document.outerHtml());
         pageRepository.save(pageModel);
     }
@@ -107,4 +113,13 @@ public class ParserSite extends RecursiveAction {
         siteModel.setLastError(lastError);
         siteRepository.save(siteModel);
     }
+
+//    public void updateStatusToFailed(String errorMessage, String siteUrl) {
+//        SiteTable site = siteRepositories.findByUrl(siteUrl);
+//        if (site != null) {
+//            site.setStatus(StatusEnum.FAILED);
+//            site.setLastError(errorMessage);
+//            siteRepositories.save(site);
+//        }
+//    }
 }

@@ -58,11 +58,10 @@ public class ApiController {
     */
     @GetMapping("/startIndexing")
     public ResponseEntity<String> startIndexing() throws IOException {
-        Map<String, Boolean> response = new HashMap<>();
         boolean isIndexing = siteIndexingService.startIndexingSite();
         if (isIndexing) {
             String errorMessage = "Indexing has already started";
-            return ResponseEntity.ok().body("{\"result\": false, \"error\":\"" + errorMessage + "\"}");
+            return ResponseEntity.badRequest().body("{\"result\": false, \"error\":\"" + errorMessage + "\"}");
         } else {
             return ResponseEntity.ok().body("{\"result\": true}");
         }
@@ -79,7 +78,7 @@ public class ApiController {
             return ResponseEntity.ok().body("{\"result\": true}");
         } else {
             String errorMessage = "Indexing is not running";
-            return ResponseEntity.ok().body("{\"result\": false, \"error\":\"" + errorMessage + "\"}");
+            return ResponseEntity.badRequest().body("{\"result\": false, \"error\":\"" + errorMessage + "\"}");
         }
     }
 }
