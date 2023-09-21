@@ -53,17 +53,14 @@ public class StatisticsServiceImpl implements StatisticsService {
         List<Site> sitesList = sites.getSites();
         for (int i = 0; i < sitesList.size(); i++) {
             Site site = sitesList.get(i);
-
-            // ----
             SiteModel siteModel = siteRepository.findSiteModelByUrl(site.getUrl());
-            // ----
 
             DetailedStatisticsItem item = new DetailedStatisticsItem();
             item.setName(site.getName()); // OK
             item.setUrl(site.getUrl());   // OK
 
             // ----
-            long pages = pageRepository.count(); // общее кл-во страниц
+            long pages = pageRepository.count(); // общее кл-во страниц !! ИСПРАВИТЬ
             // ----
 
 //            int pages = random.nextInt(1_000); // доработать на реальную цифру
@@ -75,21 +72,9 @@ public class StatisticsServiceImpl implements StatisticsService {
             long lemmas = pages * random.nextInt(1_000); // доработать на реальную цифру
             item.setPages(pages); // OK
             item.setLemmas(lemmas); // OK
-
-//            // ----
-            item.setStatus(String.valueOf(siteModel.getStatusSiteIndex()));
-//            // ----
-
-            item.setStatus(statuses[i % 3]); // доработать на реальный статус
-
-//            item.setError(siteModel.getLastError() != null ? siteModel.getLastError() : "No errors found!");
-
-
-            item.setError(errors[i % 3]); // доработать на реальную ошибку
-
-//            item.setStatusTime(siteModel.getStatusTime());
-
-            item.setStatusTime(LocalDateTime.now()); // доработать на реальное время
+            item.setStatus(siteModel.getStatusSiteIndex()); // OK
+            item.setError(siteModel.getLastError() != null ? siteModel.getLastError() : "No errors found!"); // OK
+            item.setStatusTime(siteModel.getStatusTime());
 
             total.setPages(total.getPages() + pages);
             total.setLemmas(total.getLemmas() + lemmas);
