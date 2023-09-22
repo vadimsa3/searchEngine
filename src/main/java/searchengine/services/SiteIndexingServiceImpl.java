@@ -32,7 +32,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     @Autowired
     private SiteRepository siteRepository;
     @Autowired
-    private  PageRepository pageRepository;
+    private PageRepository pageRepository;
 
     private static String domainName;
     private static Set<String> visitedLinks = ConcurrentHashMap.newKeySet();
@@ -88,6 +88,10 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         }
     }
 
+    public boolean isIndexing(){
+        return siteModel.getStatusSiteIndex() != StatusSiteIndex.INDEXING;
+    }
+
     private SiteModel createSiteModel(Site site) {
         SiteModel siteModel = new SiteModel();
         siteModel.setStatusSiteIndex(StatusSiteIndex.INDEXING);
@@ -104,9 +108,9 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     }
 
     public Integer countPagesBySiteId(SiteModel siteModel) {
-        List<PageModel> pages = new ArrayList<>(pageRepository.findAllPagesBySiteId(siteModel));
-        return pages.size();
+        return (pageRepository.findAllPagesBySiteId(siteModel).size());
     }
+
     public void deleteOldDataByUrlSite(String urlSite) {
         SiteModel siteModelToDelete = siteRepository.findSiteModelByUrl(urlSite);
         if (siteModelToDelete != null) {

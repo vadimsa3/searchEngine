@@ -10,9 +10,7 @@ import searchengine.model.SiteModel;
 
 @Repository
 public interface PageRepository extends CrudRepository<PageModel, Integer> {
-    Optional<PageModel> findByPath(String path);
-    PageModel findAllPagesBySiteId(Integer id);
+    Optional<PageModel> findPageByPath(String path);
     void deleteAllDataById(Integer id);
-    Integer countPagesBySiteId(Integer siteId);
     List<PageModel> findAllPagesBySiteId(SiteModel siteModel);
 }
