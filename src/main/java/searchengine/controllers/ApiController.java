@@ -1,24 +1,18 @@
 package searchengine.controllers;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import searchengine.dto.statistics.StatisticsResponse;
-import searchengine.dto.statistics.TrueResponce;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.SiteIndexingService;
 import searchengine.services.StatisticsService;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 // тело ответа будет конвертироваться в JSON формат
 // запрос будет ожидать JSON в теле запроса
@@ -35,10 +29,6 @@ public class ApiController {
     private SiteRepository siteRepository;
     @Autowired
     private PageRepository pageRepository;
-    @Autowired
-    private TrueResponce trueResponce;
-    @Autowired
-    private ModelMapper modelMapper;
 
     // автоматическое создание и подключение сервисов
     @Autowired
@@ -65,21 +55,10 @@ public class ApiController {
     @GetMapping("/startIndexing")
     public ResponseEntity<?> startIndexing() throws IOException {
         boolean isIndexing = siteIndexingService.startIndexingSite();
-        if (isIndexing) {
-            String errorMessage = "Indexing has already started";
-            return ResponseEntity.badRequest().body("{\"result\": false, \"error\":\"" + errorMessage + "\"}");
-        } else {
-            return new ResponseEntity<>(trueResponce, HttpStatus.OK);
-
-//            BalanceDto balanceDto = balanceService.findById(id);
-//            return balanceDto != null
-//                    ? ResponseEntity.ok(balanceDto)
-//                    : ResponseEntity.ok().body(HttpStatus.NOT_FOUND);
-//        }
-
-//            return new ResponseEntity<>(modelMapper.map(trueResponce, TrueResponce.class), HttpStatus.OK);
-//            return ResponseEntity.ok().body("{\"result\": true}");
-        }
+        return !isIndexing
+                ? ResponseEntity.badRequest().body("{\"result\": false, \"error\":\""
+                + "Indexing has already started" + "\"}")
+                : ResponseEntity.ok().body("{\"result\": true}");
     }
 
     /*Остановка текущей индексации — GET /api/stopIndexing

@@ -87,9 +87,8 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         }
     }
 
-    public Boolean isIndexing(String url){
-        siteModel = siteRepository.findSiteModelByUrl(url);
-        return siteModel.getStatusSiteIndex() == StatusSiteIndex.INDEXING;
+    public Boolean isIndexing(){
+        return siteRepository.findAllSitesBySiteStatus(StatusSiteIndex.INDEXING).size() != 0;
     }
 
 //    public boolean isIndexing(){
