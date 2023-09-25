@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
-import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
 import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.PageRepository;
@@ -88,9 +87,15 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         }
     }
 
-    public boolean isIndexing(){
-        return siteModel.getStatusSiteIndex() != StatusSiteIndex.INDEXING;
+    public Boolean isIndexing(String url){
+        siteModel = siteRepository.findSiteModelByUrl(url);
+        return siteModel.getStatusSiteIndex() == StatusSiteIndex.INDEXING;
     }
+
+//    public boolean isIndexing(){
+//        return siteRepository.countByStatus(StatusSiteIndex.INDEXING) != 0;
+//    }
+
 
     private SiteModel createSiteModel(Site site) {
         SiteModel siteModel = new SiteModel();
@@ -111,6 +116,10 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         return (pageRepository.findAllPagesBySiteId(siteModel).size());
     }
 
+//    public boolean isIndexing(){
+//        return siteRepository.countByStatus(StatusSiteIndex.INDEXING) != 0;
+//    }
+
     public void deleteOldDataByUrlSite(String urlSite) {
         SiteModel siteModelToDelete = siteRepository.findSiteModelByUrl(urlSite);
         if (siteModelToDelete != null) {
@@ -129,6 +138,39 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         }
         return false;
     }
+
+//    public boolean stopIndexing() {
+//        System.out.println("Потоков работает: " + threads.size());
+//
+//        AtomicBoolean isIndexing = new AtomicBoolean(false);
+//
+//        siteRepository.findAll().forEach(site -> {
+//            if (site.getStatus().equals(Status.INDEXING)) {
+//                isIndexing.set(true);
+//            }
+//        });
+//
+//        if (!isIndexing.get()) {
+//            return true;
+//        }
+//
+//        forkJoinPools.forEach(ForkJoinPool::shutdownNow);
+//        threads.forEach(Thread::interrupt);
+//
+//        siteRepository.findAll().forEach(site -> {
+//            site.setLastError("Остановка индексации");
+//            site.setStatus(Status.FAILED);
+//            siteRepository.save(site);
+//        });
+//
+//        threads.clear();
+//        forkJoinPools.clear();
+//
+//        return false;
+//    }
+
+
+
 
     @Override
     public boolean startIndexSingleSite(Site site) {

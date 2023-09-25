@@ -51,7 +51,7 @@ public class ParserSiteService extends RecursiveAction {
     }
 
     protected void compute() {
-        while(true) {
+        while (true) {
             String link = queueLinks.poll(); // забираем ссылку из очереди
             if (link == null) {
                 status = "waiting";
@@ -71,17 +71,19 @@ public class ParserSiteService extends RecursiveAction {
                     createPageModel(link, document, siteModel, statusCode);
                     Elements urls = document.getElementsByTag("a");
                     urls.forEach((innerLink) -> {
-                        String linkString = innerLink.absUrl("href");
-                        if (linkString.contains(SiteIndexingServiceImpl.getDomainName())
-                                & !visitedLinks.contains(linkString)
-                                && linkString.startsWith(link)
-                                && !isFile(linkString)) {
-                            queueLinks.add(linkString);
-                            ParserSiteService parserSiteService = new ParserSiteService(queueLinks, visitedLinks,
-                                    siteRepository, pageRepository, siteModel, lastError);
-                            parserSiteService.fork();
-                            updateSiteModel(siteModel, StatusSiteIndex.INDEXING,
-                                    LocalDateTime.now(), lastError.get(siteModel.getId()));
+                        synchronized (queueLinks) {
+                            String linkString = innerLink.absUrl("href");
+                            if (linkString.contains(SiteIndexingServiceImpl.getDomainName())
+                                    & !visitedLinks.contains(linkString)
+                                    && linkString.startsWith(link)
+                                    && !isFile(linkString)) {
+                                queueLinks.add(linkString);
+                                ParserSiteService parserSiteService = new ParserSiteService(queueLinks, visitedLinks,
+                                        siteRepository, pageRepository, siteModel, lastError);
+                                parserSiteService.fork();
+                                updateSiteModel(siteModel, StatusSiteIndex.INDEXING,
+                                        LocalDateTime.now(), lastError.get(siteModel.getId()));
+                            }
                         }
                     });
                 } catch (Exception exception) {
