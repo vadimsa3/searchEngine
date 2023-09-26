@@ -11,5 +11,6 @@ import java.util.List;
 public interface SiteIndexingService {
     boolean startIndexingSite();
     boolean stopIndexingSite();
+    boolean isIndexing();
     boolean startIndexSingleSite(Site site);
 }

@@ -13,5 +13,5 @@ public interface SiteRepository extends CrudRepository<SiteModel, Integer> {
     SiteModel findSiteModelByUrl(String urlSite);
 
     //    int countByStatus(StatusSiteIndex statusSiteIndex);
-    List<SiteModel> findAllSitesBySiteStatus(StatusSiteIndex statusSiteIndex);
+//    List<SiteModel> findAllSitesBySiteStatus(StatusSiteIndex statusSiteIndex);
 }

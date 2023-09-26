@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import searchengine.dto.statistics.StatisticsResponse;
+import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.SiteIndexingService;
@@ -61,6 +62,7 @@ public class ApiController {
                 : ResponseEntity.ok().body("{\"result\": true}");
     }
 
+
     /*Остановка текущей индексации — GET /api/stopIndexing
     Метод останавливает текущий процесс индексации (переиндексации).
     Если в настоящий момент индексация или переиндексация не происходит, возвращает соответствующее сообщение об ошибке.
@@ -68,12 +70,10 @@ public class ApiController {
     @GetMapping("/stopIndexing")
     public ResponseEntity<String> stopIndexing() {
         boolean isActive = siteIndexingService.stopIndexingSite();
-        if (isActive) {
-            return ResponseEntity.ok().body("{\"result\": true}");
-        } else {
-            String errorMessage = "Indexing is not running";
-            return ResponseEntity.badRequest().body("{\"result\": false, \"error\":\"" + errorMessage + "\"}");
-        }
+        return isActive
+                ? ResponseEntity.ok().body("{\"result\": true}")
+                : ResponseEntity.badRequest().body("{\"result\": false, \"error\":\""
+                + "Indexing is not running" + "\"}");
     }
 }
 

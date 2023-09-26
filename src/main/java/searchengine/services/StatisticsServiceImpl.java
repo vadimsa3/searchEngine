@@ -28,6 +28,8 @@ public class StatisticsServiceImpl implements StatisticsService {
     private PageRepository pageRepository;
     @Autowired
     private LemmaRepository lemmaRepository;
+    @Autowired
+    private SiteIndexingService siteIndexingService;
 
     private final Random random = new Random(); // удалить после корректировки лемм
     private final SitesList sites;
@@ -37,13 +39,11 @@ public class StatisticsServiceImpl implements StatisticsService {
 
         TotalStatistics total = new TotalStatistics();
         total.setSites(sites.getSites().size());
-        total.setIndexing(false); // надо поработать с кнопкой (if (result.statistics.total.indexing))
-//        total.setIndexing(isIndexing());
+        total.setIndexing(siteIndexingService.isIndexing());
 
         // При нажатии StartIndexing, должен прийти ответ в формате, который указан в тз.
         // Если он true, то кнопка Start Indexing меняется на StopIndexing, если false - то отображается ошибка,
         // которая пришла в ответе
-
 
         List<DetailedStatisticsItem> detailed = new ArrayList<>();
         List<Site> sitesList = sites.getSites();
