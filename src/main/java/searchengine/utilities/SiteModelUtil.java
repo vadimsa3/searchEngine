@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.utilities;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -10,7 +10,7 @@ import searchengine.repositories.SiteRepository;
 import java.time.LocalDateTime;
 
 @Service
-public class SiteModelService {
+public class SiteModelUtil {
 
     @Autowired
     private SiteRepository siteRepository;

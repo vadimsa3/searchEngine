@@ -1,9 +1,8 @@
 package searchengine.model;
 
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,6 +13,7 @@ import javax.persistence.*;
 @NoArgsConstructor
 
 public class SiteModel {
+
     @Id
     @Column(nullable = false)
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -35,6 +35,8 @@ public class SiteModel {
     @Column(columnDefinition = "VARCHAR(255)", name = "site_name", nullable = false)
     private String name;
 
+
+    // ???
     @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
     private List<PageModel> pageModel;
 

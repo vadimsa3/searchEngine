@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.utilities;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -13,15 +13,15 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
 import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.services.SiteIndexingServiceImpl;
 
-public class ParserSiteService extends RecursiveAction {
+public class ParserSiteUtil extends RecursiveAction {
 
-    private static final Logger log = LoggerFactory.getLogger(ParserSiteService.class);
+    private static final Logger log = LoggerFactory.getLogger(ParserSiteUtil.class);
 
     @Autowired
     private PageRepository pageRepository;
@@ -30,27 +30,26 @@ public class ParserSiteService extends RecursiveAction {
     @Autowired
     private SiteModel siteModel;
     @Autowired
-    private SiteModelService siteModelService;
+    private SiteModelUtil siteModelUtil;
     @Autowired
-    private PageModelService pageModelService;
+    private PageModelUtil pageModelUtil;
 
     private Queue<String> queueLinks;
     private Set<String> visitedLinks;
     private Map<Integer, String> lastError;
     private String status = null;
-    private Integer code = null;
 
-    public ParserSiteService(Queue<String> queueLinks, Set<String> visitedLinks, SiteRepository siteRepository,
-                             PageRepository pageRepository, SiteModel siteModel, Map<Integer, String> lastError,
-                             SiteModelService siteModelService, PageModelService pageModelService) {
+    public ParserSiteUtil(Queue<String> queueLinks, Set<String> visitedLinks, SiteRepository siteRepository,
+                          PageRepository pageRepository, SiteModel siteModel, Map<Integer, String> lastError,
+                          SiteModelUtil siteModelUtil, PageModelUtil pageModelUtil) {
         this.queueLinks = queueLinks;
         this.visitedLinks = visitedLinks;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
         this.siteModel = siteModel;
         this.lastError = lastError;
-        this.siteModelService = siteModelService;
-        this.pageModelService = pageModelService;
+        this.siteModelUtil = siteModelUtil;
+        this.pageModelUtil = pageModelUtil;
     }
 
     public String getStatus() {
@@ -62,7 +61,7 @@ public class ParserSiteService extends RecursiveAction {
             String link = queueLinks.poll(); // забираем ссылку из очереди
             if (link == null) {
                 status = "waiting";
-                siteModelService.updateSiteModel(siteModel, StatusSiteIndex.INDEXED, LocalDateTime.now(),
+                siteModelUtil.updateSiteModel(siteModel, StatusSiteIndex.INDEXED, LocalDateTime.now(),
                         lastError.get(siteModel.getId()));
                 return;
             }
@@ -75,21 +74,21 @@ public class ParserSiteService extends RecursiveAction {
                     int statusCode = response.statusCode();
                     Document document = response.parse();
 //                    Document document = Jsoup.connect(link).ignoreHttpErrors(true).get();
-                    pageModelService.createPageModel(link, document, siteModel, statusCode);
+                    pageModelUtil.createPageModel(link, document, siteModel, statusCode);
                     Elements urls = document.getElementsByTag("a");
                     urls.forEach((innerLink) -> {
-                        synchronized (queueLinks) {
+                        synchronized (queueLinks) { // ??? НЕ ФАКТ ЧТО НАДО
                             String linkString = innerLink.absUrl("href");
                             if (linkString.contains(SiteIndexingServiceImpl.getDomainName())
                                     & !visitedLinks.contains(linkString)
                                     && linkString.startsWith(link)
                                     && !isFile(linkString)) {
                                 queueLinks.add(linkString);
-                                ParserSiteService parserSiteService = new ParserSiteService(queueLinks, visitedLinks,
-                                        siteRepository, pageRepository, siteModel, lastError, siteModelService,
-                                        pageModelService);
-                                parserSiteService.fork();
-                                siteModelService.updateSiteModel(siteModel, StatusSiteIndex.INDEXING,
+                                ParserSiteUtil parserSiteUtil = new ParserSiteUtil(queueLinks, visitedLinks,
+                                        siteRepository, pageRepository, siteModel, lastError, siteModelUtil,
+                                        pageModelUtil);
+                                parserSiteUtil.fork();
+                                siteModelUtil.updateSiteModel(siteModel, StatusSiteIndex.INDEXING,
                                         LocalDateTime.now(), lastError.get(siteModel.getId()));
                             }
                         }

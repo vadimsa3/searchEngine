@@ -16,6 +16,9 @@ import searchengine.model.SiteModel;
 import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.utilities.PageModelUtil;
+import searchengine.utilities.ParserSiteUtil;
+import searchengine.utilities.SiteModelUtil;
 
 @Service
 public class SiteIndexingServiceImpl implements SiteIndexingService {
@@ -29,9 +32,9 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     @Autowired
     private PageRepository pageRepository;
     @Autowired
-    private SiteModelService siteModelService;
+    private SiteModelUtil siteModelUtil;
     @Autowired
-    private PageModelService pageModelService;
+    private PageModelUtil pageModelUtil;
 
     private static String domainName;
     private static Set<String> visitedLinks = ConcurrentHashMap.newKeySet();
@@ -50,7 +53,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
             isIndexing(); // потом удалить
             System.out.println(isIndexing()); // потом удалить
             deleteOldDataByUrlSite(site.getUrl());
-            siteModel = siteModelService.createSiteModel(site);
+            siteModel = siteModelUtil.createSiteModel(site);
             log.info("Start indexing site: " + site.getUrl());
             isIndexing(); // потом удалить
             System.out.println(isIndexing()); // потом удалить
@@ -67,18 +70,18 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         String[] tmpArray = url.split("/");
         domainName = tmpArray[2];
         queueLinks.add(url);
-        List<ParserSiteService> taskListLinkParsers = new ArrayList<>();
+        List<ParserSiteUtil> taskListLinkParsers = new ArrayList<>();
         for (int threads = 0; threads < Runtime.getRuntime().availableProcessors(); ++threads) {
-            ParserSiteService parser = new ParserSiteService(queueLinks, visitedLinks, siteRepository,
-                    pageRepository, siteModel, lastError, siteModelService, pageModelService);
+            ParserSiteUtil parser = new ParserSiteUtil(queueLinks, visitedLinks, siteRepository,
+                    pageRepository, siteModel, lastError, siteModelUtil, pageModelUtil);
             taskListLinkParsers.add(parser);
         }
 //        ForkJoinPool forkJoinPool = new ForkJoinPool();
         if (!forkJoinPool.isShutdown()) { // Returns true if this executor terminated
             taskListLinkParsers.forEach(forkJoinPool::invoke);
             // !!! execute организует (асинхронное) выполнение данной задачи (выводит ошибку 500 во фронте) !!!
-            taskListLinkParsers.forEach(parserSiteService -> {
-                if (parserSiteService.getStatus().equals("working")) {
+            taskListLinkParsers.forEach(parserSiteUtil -> {
+                if (parserSiteUtil.getStatus().equals("working")) {
                     try {
                         Thread.sleep(1000L); // переводит текущий поток в режим ожидания, замедление
                     } catch (InterruptedException interruptedException) {
@@ -126,7 +129,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
             forkJoinPool.shutdownNow();
             siteRepository.findAll().forEach(siteModel -> {
                 if (siteModel.getStatusSiteIndex() != StatusSiteIndex.INDEXED) {
-                    siteModelService.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
+                    siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
                             LocalDateTime.now(), "Indexing stopped by user!");
                 }
             });
@@ -173,7 +176,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     public boolean startIndexSingleSite(Site site) {
         SiteModel oldSiteModel = siteRepository.findSiteModelByUrl(site.getUrl());
         if (oldSiteModel == null) {
-            siteModel = siteModelService.createSiteModel(site);
+            siteModel = siteModelUtil.createSiteModel(site);
             log.info("Start indexing single site: " + site.getUrl());
             startParsingSite(site.getUrl());
             log.info("Count pages from site " + siteModel.getName() + " - " + countPagesBySiteId(siteModel));

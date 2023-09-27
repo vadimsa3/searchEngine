@@ -1,11 +1,10 @@
 package searchengine.model;
 
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity(name = "page_index")
 @Data
@@ -30,4 +29,12 @@ public class PageModel {
 
     @Column(columnDefinition = "MEDIUMTEXT", name = "page_content", nullable = false)
     private String content;
+
+
+    // ???
+    @ManyToOne(fetch = FetchType.LAZY)
+    private SiteModel siteModel;
+
+//    @OneToMany(mappedBy = "page", cascade = CascadeType.REMOVE)
+//    private List<IndexModel> indexes;
 }

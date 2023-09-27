@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.utilities;
 
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,7 +8,7 @@ import searchengine.model.SiteModel;
 import searchengine.repositories.PageRepository;
 
 @Service
-public class PageModelService {
+public class PageModelUtil {
 
     @Autowired
     private PageRepository pageRepository;
