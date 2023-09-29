@@ -21,4 +21,9 @@ public class PageModelUtil {
         pageModel.setContent(document.outerHtml());
         pageRepository.save(pageModel);
     }
+
+    public String getPageModelPath() {
+        return pageModel.getPath();
+    }
+
 }

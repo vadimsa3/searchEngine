@@ -13,6 +13,7 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
 import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.PageRepository;
@@ -33,6 +34,10 @@ public class ParserSiteUtil extends RecursiveAction {
     private SiteModelUtil siteModelUtil;
     @Autowired
     private PageModelUtil pageModelUtil;
+    @Autowired
+    private LemmaFinderUtil lemmaFinderUtil;
+    @Autowired
+    private LemmaModelUtil lemmaModelUtil;
 
     private Queue<String> queueLinks;
     private Set<String> visitedLinks;
@@ -41,7 +46,7 @@ public class ParserSiteUtil extends RecursiveAction {
 
     public ParserSiteUtil(Queue<String> queueLinks, Set<String> visitedLinks, SiteRepository siteRepository,
                           PageRepository pageRepository, SiteModel siteModel, Map<Integer, String> lastError,
-                          SiteModelUtil siteModelUtil, PageModelUtil pageModelUtil) {
+                          SiteModelUtil siteModelUtil, PageModelUtil pageModelUtil, LemmaModelUtil lemmaModelUtil) {
         this.queueLinks = queueLinks;
         this.visitedLinks = visitedLinks;
         this.siteRepository = siteRepository;
@@ -50,6 +55,7 @@ public class ParserSiteUtil extends RecursiveAction {
         this.lastError = lastError;
         this.siteModelUtil = siteModelUtil;
         this.pageModelUtil = pageModelUtil;
+        this.lemmaModelUtil = lemmaModelUtil;
     }
 
     public String getStatus() {
@@ -75,6 +81,15 @@ public class ParserSiteUtil extends RecursiveAction {
                     Document document = response.parse();
 //                    Document document = Jsoup.connect(link).ignoreHttpErrors(true).get();
                     pageModelUtil.createPageModel(link, document, siteModel, statusCode);
+                    lemmaModelUtil.createLemmaModel(siteModel, pageModelUtil.getPageModelPath());
+
+
+// СЮДА ВПИСАТЬ ПОЛУЧЕНИЕ ЛЕММ
+
+
+
+
+
                     Elements urls = document.getElementsByTag("a");
                     urls.forEach((innerLink) -> {
                         synchronized (queueLinks) { // ??? НЕ ФАКТ ЧТО НАДО
@@ -86,7 +101,7 @@ public class ParserSiteUtil extends RecursiveAction {
                                 queueLinks.add(linkString);
                                 ParserSiteUtil parserSiteUtil = new ParserSiteUtil(queueLinks, visitedLinks,
                                         siteRepository, pageRepository, siteModel, lastError, siteModelUtil,
-                                        pageModelUtil);
+                                        pageModelUtil, lemmaModelUtil);
                                 parserSiteUtil.fork();
                                 siteModelUtil.updateSiteModel(siteModel, StatusSiteIndex.INDEXING,
                                         LocalDateTime.now(), lastError.get(siteModel.getId()));

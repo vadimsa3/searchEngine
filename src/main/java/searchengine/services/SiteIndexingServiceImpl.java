@@ -16,6 +16,7 @@ import searchengine.model.SiteModel;
 import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.utilities.LemmaModelUtil;
 import searchengine.utilities.PageModelUtil;
 import searchengine.utilities.ParserSiteUtil;
 import searchengine.utilities.SiteModelUtil;
@@ -35,6 +36,8 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     private SiteModelUtil siteModelUtil;
     @Autowired
     private PageModelUtil pageModelUtil;
+    @Autowired
+    private LemmaModelUtil lemmaModelUtil;
 
     private static String domainName;
     private static Set<String> visitedLinks = ConcurrentHashMap.newKeySet();
@@ -73,7 +76,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         List<ParserSiteUtil> taskListLinkParsers = new ArrayList<>();
         for (int threads = 0; threads < Runtime.getRuntime().availableProcessors(); ++threads) {
             ParserSiteUtil parser = new ParserSiteUtil(queueLinks, visitedLinks, siteRepository,
-                    pageRepository, siteModel, lastError, siteModelUtil, pageModelUtil);
+                    pageRepository, siteModel, lastError, siteModelUtil, pageModelUtil, lemmaModelUtil);
             taskListLinkParsers.add(parser);
         }
 //        ForkJoinPool forkJoinPool = new ForkJoinPool();

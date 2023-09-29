@@ -107,6 +107,19 @@ public class ApiController {
 
 @PostMapping("/indexPage")
     public void indexPage(@RequestParam String url){
+
+        @GetMapping("/indexPage")
+    public ResponseEntity<?> indexPage(@RequestParam("url") String url) throws IOException {
+        System.out.println(url + " pageUrl");
+        if (indexingPage.isCorrectUrl(url)) {
+            return ResponseEntity.ok().body("{\"result\": true}");
+        } else {
+            String errorMessage = "Данная страница находится за пределами сайтов," +
+                    "указанных в конфигурационном файле";
+            return ResponseEntity.ok().body("{\"result\": false, \"error\":\"" + errorMessage + "\"}");
+        }
+    }
+
     }
 * */
 
