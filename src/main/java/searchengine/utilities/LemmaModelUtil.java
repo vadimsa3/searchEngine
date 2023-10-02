@@ -9,6 +9,7 @@ import searchengine.model.SiteModel;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,7 +23,7 @@ public class LemmaModelUtil {
     @Autowired
     private LemmaFinderUtil lemmaFinderUtil;
 
-    public void createLemmaModel(SiteModel siteModel, String path) {
+    public void createLemmaModel(SiteModel siteModel, String path) throws IOException {
         PageModel pageForLemmas = pageRepository.findPageByPath(path);
         String pageForLemmasHtml = pageForLemmas.getContent();
         Map<String, Integer> lemmasCountByPage = lemmaFinderUtil.getLemmasMap(pageForLemmasHtml);

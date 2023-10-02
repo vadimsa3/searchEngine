@@ -3,29 +3,30 @@ package searchengine.utilities;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.*;
 
 @Slf4j
+@Service
 public class LemmaFinderUtil {
 
     private final LuceneMorphology luceneMorphology;
     private static final String WORD_TYPE_REGEX = "\\W\\w&&[^а-яА-Я\\s]";
     private static final String[] particlesNames = new String[]{"МЕЖД", "ПРЕДЛ", "СОЮЗ"};
 
-    public LemmaFinderUtil getInstance() throws IOException {
-        LuceneMorphology morphology = new RussianLuceneMorphology();
-        return new LemmaFinderUtil(morphology);
+    public LemmaFinderUtil() throws IOException {
+        luceneMorphology = new RussianLuceneMorphology();
     }
-
-    public LemmaFinderUtil(LuceneMorphology luceneMorphology) {
-        this.luceneMorphology = luceneMorphology;
-    }
-
-    public LemmaFinderUtil() {
-        throw new RuntimeException("Disallow construct");
-    }
+//
+//    public LemmaFinderUtil(LuceneMorphology luceneMorphology) {
+//        this.luceneMorphology = luceneMorphology;
+//    }
+//
+//    public LemmaFinderUtil() {
+//        throw new RuntimeException("Disallow construct");
+//    }
 
     /**
      * Метод разделяет текст на слова, находит все леммы и считает их количество.

@@ -21,8 +21,8 @@ public class Lemm {
 //        wordBaseForms.forEach(System.out::println);
 
 
-        LuceneMorphology luceneMorph = new RussianLuceneMorphology();
-        LemmaFinderUtil lemmaFinderUtil = new LemmaFinderUtil(luceneMorph);
+//        LuceneMorphology luceneMorph = new RussianLuceneMorphology();
+//        LemmaFinderUtil lemmaFinderUtil = new LemmaFinderUtil(luceneMorph);
 
         String text = "Повторное появление леопарда в Осетии позволяет предположить,\n" +
                 "что леопард постоянно обитает в некоторых районах Северного\n" +

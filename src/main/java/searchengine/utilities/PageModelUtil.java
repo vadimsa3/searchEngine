@@ -13,17 +13,13 @@ public class PageModelUtil {
     @Autowired
     private PageRepository pageRepository;
 
-    public void createPageModel(String url, Document document, SiteModel siteModel, Integer statusCode) {
+    public PageModel createPageModel(String url, Document document, SiteModel siteModel, Integer statusCode) {
         PageModel pageModel = new PageModel();
         pageModel.setSiteId(siteModel);
         pageModel.setPath(url.substring(siteModel.getUrl().length()));
         pageModel.setCode(statusCode);
         pageModel.setContent(document.outerHtml());
         pageRepository.save(pageModel);
+        return pageModel;
     }
-
-    public String getPageModelPath() {
-        return pageModel.getPath();
-    }
-
 }

@@ -46,7 +46,8 @@ public class ParserSiteUtil extends RecursiveAction {
 
     public ParserSiteUtil(Queue<String> queueLinks, Set<String> visitedLinks, SiteRepository siteRepository,
                           PageRepository pageRepository, SiteModel siteModel, Map<Integer, String> lastError,
-                          SiteModelUtil siteModelUtil, PageModelUtil pageModelUtil, LemmaModelUtil lemmaModelUtil) {
+                          SiteModelUtil siteModelUtil, PageModelUtil pageModelUtil, LemmaModelUtil lemmaModelUtil,
+                          LemmaFinderUtil lemmaFinderUtil) {
         this.queueLinks = queueLinks;
         this.visitedLinks = visitedLinks;
         this.siteRepository = siteRepository;
@@ -56,6 +57,7 @@ public class ParserSiteUtil extends RecursiveAction {
         this.siteModelUtil = siteModelUtil;
         this.pageModelUtil = pageModelUtil;
         this.lemmaModelUtil = lemmaModelUtil;
+        this.lemmaFinderUtil = lemmaFinderUtil;
     }
 
     public String getStatus() {
@@ -80,14 +82,11 @@ public class ParserSiteUtil extends RecursiveAction {
                     int statusCode = response.statusCode();
                     Document document = response.parse();
 //                    Document document = Jsoup.connect(link).ignoreHttpErrors(true).get();
-                    pageModelUtil.createPageModel(link, document, siteModel, statusCode);
-                    lemmaModelUtil.createLemmaModel(siteModel, pageModelUtil.getPageModelPath());
+                    PageModel pageModel = pageModelUtil.createPageModel(link, document, siteModel, statusCode);
+                    lemmaModelUtil.createLemmaModel(siteModel, pageModel.getPath());
 
 
 // СЮДА ВПИСАТЬ ПОЛУЧЕНИЕ ЛЕММ
-
-
-
 
 
                     Elements urls = document.getElementsByTag("a");
@@ -101,7 +100,7 @@ public class ParserSiteUtil extends RecursiveAction {
                                 queueLinks.add(linkString);
                                 ParserSiteUtil parserSiteUtil = new ParserSiteUtil(queueLinks, visitedLinks,
                                         siteRepository, pageRepository, siteModel, lastError, siteModelUtil,
-                                        pageModelUtil, lemmaModelUtil);
+                                        pageModelUtil, lemmaModelUtil, lemmaFinderUtil);
                                 parserSiteUtil.fork();
                                 siteModelUtil.updateSiteModel(siteModel, StatusSiteIndex.INDEXING,
                                         LocalDateTime.now(), lastError.get(siteModel.getId()));
