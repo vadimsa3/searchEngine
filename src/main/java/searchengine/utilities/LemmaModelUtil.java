@@ -1,5 +1,6 @@
 package searchengine.utilities;
 
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,7 +26,9 @@ public class LemmaModelUtil {
 
     public void createLemmaModel(SiteModel siteModel, String path) throws IOException {
         PageModel pageForLemmas = pageRepository.findPageByPath(path);
-        String pageForLemmasHtml = pageForLemmas.getContent();
+        String pageForLemmasHtml = extractText(pageForLemmas.getContent());
+//        String pageForLemmasHtml = pageForLemmas.getContent();
+
         Map<String, Integer> lemmasCountByPage = lemmaFinderUtil.getLemmasMap(pageForLemmasHtml);
         Set<String> lemmasSet = lemmasCountByPage.keySet();
         for (String lemmaForPage : lemmasSet) {
@@ -60,6 +63,11 @@ public class LemmaModelUtil {
 //        pageModel.setCode(statusCode);
 //        pageModel.setContent(document.outerHtml());
 //        pageRepository.save(pageModel);
+    }
+
+    public static String extractText(String html) {
+        return Jsoup.parse(html).text();
+//        return Jsoup.clean(html, Whitelist.none());
     }
 
 }
