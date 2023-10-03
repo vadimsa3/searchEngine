@@ -6,7 +6,6 @@ import searchengine.config.Site;
 import searchengine.model.SiteModel;
 import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.SiteRepository;
-
 import java.time.LocalDateTime;
 
 @Service
@@ -19,8 +18,7 @@ public class SiteModelUtil {
         SiteModel siteModel = new SiteModel();
         siteModel.setStatusSiteIndex(StatusSiteIndex.INDEXING);
         siteModel.setStatusTime(LocalDateTime.now());
-        siteModel.setLastError("lastError"); // РАЗОБРАТЬСЯ
-//        siteModel.setLastError(lastError.get(siteModel.getId()));
+        siteModel.setLastError("lastError.get(siteModel.getId())"); // !!! исправить !!!
         siteModel.setUrl(site.getUrl());
         siteModel.setName(site.getName());
         siteRepository.save(siteModel);

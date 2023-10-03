@@ -82,13 +82,10 @@ public class ParserSiteUtil extends RecursiveAction {
                     Connection.Response response = Jsoup.connect(link).ignoreHttpErrors(true).execute();
                     int statusCode = response.statusCode();
                     Document document = response.parse();
-//                    Document document = Jsoup.connect(link).ignoreHttpErrors(true).get();
                     PageModel pageModel = pageModelUtil.createPageModel(link, document, siteModel, statusCode);
-                    lemmaModelUtil.createLemmaModel(siteModel, pageModel.getPath());
-
+                    lemmaModelUtil.createLemmaModel(siteModel, pageModel);
 
 // СЮДА ВПИСАТЬ ПОЛУЧЕНИЕ ЛЕММ
-
 
                     Elements urls = document.getElementsByTag("a");
                     urls.forEach((innerLink) -> {
