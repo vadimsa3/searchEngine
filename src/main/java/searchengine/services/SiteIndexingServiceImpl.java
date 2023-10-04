@@ -111,9 +111,9 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     public void deleteOldDataByUrlSite(String urlSite) {
         SiteModel siteModelToDelete = siteRepository.findSiteModelByUrl(urlSite);
         if (siteModelToDelete != null) {
+            siteRepository.delete(siteModelToDelete);
             lemmaRepository.deleteAllLemmasById(siteModelToDelete.getId());
             pageRepository.deleteAllDataById(siteModelToDelete.getId());
-            siteRepository.delete(siteModelToDelete);
         }
     }
 

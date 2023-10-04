@@ -53,24 +53,18 @@ public class StatisticsServiceImpl implements StatisticsService {
             DetailedStatisticsItem item = new DetailedStatisticsItem();
             item.setName(site.getName());
             item.setUrl(site.getUrl());
-//            // ----
-//            long lemmas = lemmaRepository.count();
-//            // ----
-            long lemmas = random.nextInt(1_000); // доработать на реальную цифру
-
             item.setStatus(siteModel != null ? siteModel.getStatusSiteIndex() : StatusSiteIndex.FAILED);
             item.setPages(siteModel != null ? pageRepository.findAllPagesBySiteId(siteModel).size() : 0);
-            item.setLemmas(siteModel != null ? lemmas : 0);
+            item.setLemmas(siteModel != null ? lemmaRepository.findAllLemmasBySiteId(siteModel).size() : 0);
             item.setStatusTime(siteModel != null ? siteModel.getStatusTime() : LocalDateTime.now());
             item.setError(siteModel != null ? (siteModel.getLastError() != null ? siteModel.getLastError()
                     : "No errors found!") : "Site not yet been indexed!");
             long allPages = pageRepository.count();
             total.setPages(allPages);
-//            total.setPages(total.getPages() + allPages);
-            total.setLemmas(total.getLemmas() + lemmas);
+            long allLemmas = lemmaRepository.count();
+            total.setLemmas(allLemmas);
             detailed.add(item);
         }
-
         StatisticsResponse response = new StatisticsResponse();
         StatisticsData data = new StatisticsData();
         data.setTotal(total);

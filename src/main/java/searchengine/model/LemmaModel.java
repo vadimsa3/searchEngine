@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 
 // ???
-//@Table(name = "lemma_index", indexes = @Index(columnList = "lemma", name = "lemma_index"))
+@Table(name = "lemma_index", indexes = @Index(columnList = "lemma", name = "lemma_index"))
 
 public class LemmaModel {
 
@@ -30,8 +30,8 @@ public class LemmaModel {
     @Column(nullable = false)
     private int frequency;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private SiteModel siteModel;
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    private SiteModel siteModel;
 
     // ???
 //    @OneToMany(mappedBy = "lemma", cascade = CascadeType.REMOVE)

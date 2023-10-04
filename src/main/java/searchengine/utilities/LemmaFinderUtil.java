@@ -19,15 +19,6 @@ public class LemmaFinderUtil {
     public LemmaFinderUtil() throws IOException {
         luceneMorphology = new RussianLuceneMorphology();
     }
-//
-//    public LemmaFinderUtil(LuceneMorphology luceneMorphology) {
-//        this.luceneMorphology = luceneMorphology;
-//    }
-//
-//    public LemmaFinderUtil() {
-//        throw new RuntimeException("Disallow construct");
-//    }
-
     /**
      * Метод разделяет текст на слова, находит все леммы и считает их количество.
      *
