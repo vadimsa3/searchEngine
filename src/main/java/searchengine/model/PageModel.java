@@ -30,8 +30,6 @@ public class PageModel {
     @Column(columnDefinition = "MEDIUMTEXT", name = "page_content", nullable = false)
     private String content;
 
-
-    // ???
     @ManyToOne(fetch = FetchType.LAZY)
     private SiteModel siteModel;
 

@@ -12,6 +12,7 @@ import searchengine.repositories.PageRepository;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -20,36 +21,53 @@ public class LemmaModelUtil {
     @Autowired
     private LemmaRepository lemmaRepository;
     @Autowired
-    private PageRepository pageRepository;
-    @Autowired
     private LemmaFinderUtil lemmaFinderUtil;
 
-    public void createLemmaModel(SiteModel siteModel, PageModel pageModel) throws IOException {
-//        PageModel pageForLemmas = pageRepository.findPageByPath(path);
-        String pageForLemmasHtml = extractTextFromPageContent(pageModel.getContent());
-//        String pageForLemmasHtml = extractText(pageForLemmas.getContent());
-//        String pageForLemmasHtml = pageForLemmas.getContent();
+//    public void createLemmaModel(SiteModel siteModel, PageModel pageModel) throws IOException {
+//        String textPageForLemmasHtml = extractTextFromPageContent(pageModel.getContent());
+//        Map<String, Integer> lemmasMapByPage = lemmaFinderUtil.getLemmasMap(textPageForLemmasHtml);
+//        Set<String> lemmasSet = lemmasMapByPage.keySet();
+//        for (String lemmaForPage : lemmasSet) {
+//            int countLemmas = lemmasMapByPage.get(lemmaForPage);
+//            Optional<LemmaModel> existingLemmaOpt = lemmaRepository.findByLemma(lemmaForPage);
+////            Optional<LemmaModel> existingLemmaOpt = lemmaRepository.findByLemmaAndSiteId(lemmaForPage, siteModel.getId());
+//
+//            if (existingLemmaOpt.isPresent()) {
+//                LemmaModel existingLemma = existingLemmaOpt.get();
+//                int count = existingLemma.getFrequency() + countLemmas;
+//                existingLemma.setFrequency(count);
+//                lemmaRepository.save(existingLemma);
+////                saveSearchIndex(page, existingLemma, count);
+//            } else {
+//                LemmaModel newLemmaModel = new LemmaModel();
+//                newLemmaModel.setSiteId(siteModel);
+//                newLemmaModel.setFrequency(countLemmas);
+//                newLemmaModel.setLemma(lemmaForPage);
+//                lemmaRepository.save(newLemmaModel);
+////                saveSearchIndex(page, newLemmaModel, countLemma);
+//            }
+//        }
+//    }
 
-        Map<String, Integer> lemmasCountByPage = lemmaFinderUtil.getLemmasMap(pageForLemmasHtml);
+    public void createLemmaModel(PageModel pageModel) throws IOException {
+        String textPageForLemmasHtml = extractTextFromPageContent(pageModel.getContent());
+        Map<String, Integer> lemmasCountByPage = lemmaFinderUtil.getLemmasMap(textPageForLemmasHtml);
         Set<String> lemmasSet = lemmasCountByPage.keySet();
         for (String lemmaForPage : lemmasSet) {
-
-            // !!! вероятно ошибка возникает в этом месте когда лемма есть в двух ID сайтов
-
-            LemmaModel lemmaModel = lemmaRepository.findByLemma(lemmaForPage);
-            if (lemmaModel != null) {
-                int frequency = lemmaModel.getFrequency();
-                lemmaModel.setFrequency(frequency + 1);
+//            LemmaModel lemmaModel = lemmaRepository.findByLemma(lemmaForPage);
+            synchronized (lemmaRepository) { // для исключеня дублирования записи в репозиторий лемм другими потоками
+                LemmaModel lemmaModel = lemmaRepository.findByLemmaAndSiteId(lemmaForPage, pageModel.getSiteId().getId());
+                if (lemmaModel != null) {
+                    lemmaModel.setFrequency(lemmaModel.getFrequency() + 1);
+                    // saveSearchIndexInSearchIndexRepository(lemmasCountByPage, lemmaForPage, lemmaModel, pageForLemmas);
+                } else {
+                    lemmaModel.setSiteId(pageModel.getSiteId());
+                    lemmaModel.setLemma(lemmaForPage);
+                    lemmaModel.setFrequency(1);
+                    // saveSearchIndexInSearchIndexRepository(lemmasCountByPage, lemmaForPage, newLemmaModel, pageForLemmas);
+                }
                 lemmaRepository.save(lemmaModel);
-            // saveSearchIndexInSearchIndexRepository(lemmasCountByPage, lemmaForPage, lemmaModel, pageForLemmas);
-                continue;
             }
-            LemmaModel newLemmaModel = new LemmaModel();
-            newLemmaModel.setFrequency(1);
-            newLemmaModel.setLemma(lemmaForPage);
-            newLemmaModel.setSiteId(siteModel);
-            lemmaRepository.save(newLemmaModel);
-            // saveSearchIndexInSearchIndexRepository(lemmasCountByPage, lemmaForPage, newLemmaModel, pageForLemmas);
         }
     }
 

@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 
 // ???
-@Table(name = "lemma_index", indexes = @Index(columnList = "lemma", name = "lemma_index"))
+//@Table(name = "lemma_index", indexes = @Index(columnList = "lemma", name = "lemma_index"))
 
 public class LemmaModel {
 
@@ -20,7 +20,7 @@ public class LemmaModel {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-    @ManyToOne(cascade = {CascadeType.MERGE}, fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE})
     @JoinColumn(name = "site_id", nullable = false)
     private SiteModel siteId;
 
@@ -29,6 +29,9 @@ public class LemmaModel {
 
     @Column(nullable = false)
     private int frequency;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private SiteModel siteModel;
 
     // ???
 //    @OneToMany(mappedBy = "lemma", cascade = CascadeType.REMOVE)

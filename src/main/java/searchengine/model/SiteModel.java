@@ -17,7 +17,7 @@ public class SiteModel {
     @Id
     @Column(nullable = false)
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private int id;
+    private Integer id;
 
     @Column(columnDefinition = "ENUM('INDEXING', 'INDEXED', 'FAILED')", name = "status_index", nullable = false)
     @Enumerated(EnumType.STRING)
@@ -35,9 +35,9 @@ public class SiteModel {
     @Column(columnDefinition = "VARCHAR(255)", name = "site_name", nullable = false)
     private String name;
 
-
-    // ???
     @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
     private List<PageModel> pageModel;
 
+    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
+    private List<LemmaModel> lemmaModel;
 }

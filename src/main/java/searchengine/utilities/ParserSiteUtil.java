@@ -83,7 +83,7 @@ public class ParserSiteUtil extends RecursiveAction {
                     int statusCode = response.statusCode();
                     Document document = response.parse();
                     PageModel pageModel = pageModelUtil.createPageModel(link, document, siteModel, statusCode);
-                    lemmaModelUtil.createLemmaModel(siteModel, pageModel);
+                    lemmaModelUtil.createLemmaModel(pageModel);
 
 // СЮДА ВПИСАТЬ ПОЛУЧЕНИЕ ЛЕММ
 
