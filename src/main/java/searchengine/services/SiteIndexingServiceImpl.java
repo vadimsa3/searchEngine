@@ -14,6 +14,7 @@ import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.model.SiteModel;
 import searchengine.model.StatusSiteIndex;
+import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
@@ -40,6 +41,8 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     private LemmaModelUtil lemmaModelUtil;
     @Autowired
     private LemmaFinderUtil lemmaFinderUtil;
+    @Autowired
+    private IndexRepository indexRepository;
 
     private static String domainName;
     private static Set<String> visitedLinks = ConcurrentHashMap.newKeySet();
@@ -111,9 +114,14 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     public void deleteOldDataByUrlSite(String urlSite) {
         SiteModel siteModelToDelete = siteRepository.findSiteModelByUrl(urlSite);
         if (siteModelToDelete != null) {
+
             siteRepository.delete(siteModelToDelete);
+            indexRepository.deleteAllIndexById(siteModelToDelete.getId());
             lemmaRepository.deleteAllLemmasById(siteModelToDelete.getId());
             pageRepository.deleteAllDataById(siteModelToDelete.getId());
+//            siteRepository.delete(siteModelToDelete);
+//            lemmaRepository.deleteAllLemmasById(siteModelToDelete.getId());
+//            pageRepository.deleteAllDataById(siteModelToDelete.getId());
         }
     }
 

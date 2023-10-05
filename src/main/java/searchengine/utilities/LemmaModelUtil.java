@@ -22,6 +22,8 @@ public class LemmaModelUtil {
     private LemmaRepository lemmaRepository;
     @Autowired
     private LemmaFinderUtil lemmaFinderUtil;
+    @Autowired
+    private IndexModelUtil indexModelUtil;
 
     public void createLemmaModel(PageModel pageModel, SiteModel siteModel) throws IOException {
         String textPageForLemmasHtml = extractTextFromPageContent(pageModel.getContent());
@@ -33,6 +35,7 @@ public class LemmaModelUtil {
                 if (lemmaModel != null) {
                     lemmaModel.setFrequency(lemmaModel.getFrequency() + 1);
                     lemmaRepository.save(lemmaModel);
+                    indexModelUtil.createIndexModel(pageModel, lemmaModel, lemmaForPage, lemmasCountByPage);
                     // saveSearchIndexInSearchIndexRepository(lemmasCountByPage, lemmaForPage, lemmaModel, pageForLemmas);
                 } else {
                     LemmaModel newLemmaModel = new LemmaModel();
@@ -40,7 +43,8 @@ public class LemmaModelUtil {
                     newLemmaModel.setLemma(lemmaForPage);
                     newLemmaModel.setFrequency(1);
                     lemmaRepository.save(newLemmaModel);
-                    // saveSearchIndexInSearchIndexRepository(lemmasCountByPage, lemmaForPage, newLemmaModel, pageForLemmas);
+                    indexModelUtil.createIndexModel(pageModel, newLemmaModel, newLemmaModel.getFrequency());
+                // saveSearchIndexInSearchIndexRepository(lemmasCountByPage, lemmaForPage, newLemmaModel, pageForLemmas);
                 }
             }
         }

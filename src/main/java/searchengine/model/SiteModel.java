@@ -40,4 +40,7 @@ public class SiteModel {
 
     @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
     private List<LemmaModel> lemmaModel;
+
+    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
+    private List<IndexModel> indexModel;
 }
