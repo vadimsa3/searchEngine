@@ -2,6 +2,7 @@ package searchengine.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.NaturalId;
 
 import javax.persistence.*;
 import java.util.List;
@@ -9,7 +10,7 @@ import java.util.List;
 @Entity(name = "page_index")
 @Data
 @NoArgsConstructor
-@Table(name = "page_index", indexes = @Index(columnList = "path_page, site_id", name = "path_index", unique = true))
+@Table(indexes = @Index(columnList = "path_page, site_id", name = "path_index", unique = true))
 
 public class PageModel {
     @Id
@@ -17,10 +18,12 @@ public class PageModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+//    @NaturalId // естественный ключ - если с path_page, то составной естественный ключ для ускорения запросов
     @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE})
     @JoinColumn(name = "site_id")
     private SiteModel siteId;
 
+//    @NaturalId // естественный ключ - если с site_id, то составной естественный ключ для ускорения запросов
     @Column(columnDefinition = "TEXT", name = "path_page", nullable = false)
     private String path;
 
@@ -30,9 +33,9 @@ public class PageModel {
     @Column(columnDefinition = "MEDIUMTEXT", name = "page_content", nullable = false)
     private String content;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private SiteModel siteModel;
-
-    @OneToMany(mappedBy = "page_index", cascade = CascadeType.REMOVE)
-    private List<IndexModel> indexModels;
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    private SiteModel siteModel;
+//
+//    @OneToMany(mappedBy = "page_index", cascade = CascadeType.REMOVE)
+//    private List<IndexModel> indexModel;
 }

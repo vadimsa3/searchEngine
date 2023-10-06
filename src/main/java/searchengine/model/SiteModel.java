@@ -35,12 +35,12 @@ public class SiteModel {
     @Column(columnDefinition = "VARCHAR(255)", name = "site_name", nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE) // связь с индексаим
     private List<PageModel> pageModel;
-
-    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
-    private List<LemmaModel> lemmaModel;
-
-    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
-    private List<IndexModel> indexModel;
+//
+//    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
+//    private List<LemmaModel> lemmaModel;
+//
+//    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
+//    private List<IndexModel> indexModel;
 }

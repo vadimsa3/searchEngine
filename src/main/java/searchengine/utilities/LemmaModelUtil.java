@@ -32,10 +32,12 @@ public class LemmaModelUtil {
         for (String lemmaForPage : lemmasSet) {
             synchronized (lemmaRepository) { // для исключеня дублирования записи в репозиторий лемм другими потоками
                 LemmaModel lemmaModel = lemmaRepository.findByLemmaAndSiteId(lemmaForPage, siteModel);
+                int countLemma = lemmasCountByPage.get(lemmaForPage);
                 if (lemmaModel != null) {
-                    lemmaModel.setFrequency(lemmaModel.getFrequency() + 1);
+                    int count = lemmaModel.getFrequency() + 1;
+                    lemmaModel.setFrequency(count);
                     lemmaRepository.save(lemmaModel);
-                    indexModelUtil.createIndexModel(pageModel, lemmaModel, lemmaForPage, lemmasCountByPage);
+                    indexModelUtil.createIndexModel(pageModel, lemmaModel, count);
                     // saveSearchIndexInSearchIndexRepository(lemmasCountByPage, lemmaForPage, lemmaModel, pageForLemmas);
                 } else {
                     LemmaModel newLemmaModel = new LemmaModel();
@@ -43,7 +45,7 @@ public class LemmaModelUtil {
                     newLemmaModel.setLemma(lemmaForPage);
                     newLemmaModel.setFrequency(1);
                     lemmaRepository.save(newLemmaModel);
-                    indexModelUtil.createIndexModel(pageModel, newLemmaModel, newLemmaModel.getFrequency());
+                    indexModelUtil.createIndexModel(pageModel, newLemmaModel, countLemma);
                 // saveSearchIndexInSearchIndexRepository(lemmasCountByPage, lemmaForPage, newLemmaModel, pageForLemmas);
                 }
             }

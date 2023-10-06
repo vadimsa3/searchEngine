@@ -11,8 +11,7 @@ import java.util.Set;
 @Entity(name = "lemma_index")
 @Data
 @NoArgsConstructor
-
-//@Table(name = "lemma_index", indexes = @Index(columnList = "lemma", name = "lemma_index"))
+@Table(indexes = @Index(columnList = "lemma", name = "lemma_index"))
 
 public class LemmaModel {
 
@@ -34,6 +33,6 @@ public class LemmaModel {
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    private SiteModel siteModel;
 
-    @OneToMany(mappedBy = "lemma_index", cascade = CascadeType.REMOVE)
-    private Set<IndexModel> indexModels;
+//    @OneToMany(mappedBy = "lemma_index", cascade = CascadeType.REMOVE)
+//    private Set<IndexModel> indexModel;
 }
