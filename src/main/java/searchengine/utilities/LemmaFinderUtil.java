@@ -14,7 +14,7 @@ public class LemmaFinderUtil {
 
     private final LuceneMorphology luceneMorphology;
     private static final String WORD_TYPE_REGEX = "\\W\\w&&[^а-яА-Я\\s]";
-    private static final String[] particlesNames = new String[]{"МЕЖД", "ПРЕДЛ", "СОЮЗ", "ВВОДН", "ЧАСТ"};
+    private static final String[] particlesNames = new String[]{"МЕЖД", "ПРЕДЛ", "СОЮЗ", "ВВОДН", "ЧАСТ", "МС"};
 
 
     public LemmaFinderUtil() throws IOException {
@@ -76,7 +76,8 @@ public class LemmaFinderUtil {
 
     private boolean hasParticleProperty(String wordBase) {
         for (String property : particlesNames) {
-            if (wordBase.toUpperCase().contains(property)) {
+            // !!! РАЗОБРАТЬСЯ ПОЧЕМУ ПРОХОДЯТ БУКВЫ И ТП !!!
+            if (wordBase.toUpperCase().contains(property) || wordBase.length() <= 3) {
                 return true;
             }
         }

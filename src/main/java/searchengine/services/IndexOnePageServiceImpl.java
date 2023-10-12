@@ -5,17 +5,22 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import searchengine.config.Site;
 import searchengine.config.SitesList;
+import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
 import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.utilities.PageModelUtil;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 
 @Service
-public class IndexPageServiceImpl implements IndexPageService{
+public class IndexOnePageServiceImpl implements IndexOnePageService {
 
     @Autowired
     private SitesList sitesList;
@@ -27,29 +32,58 @@ public class IndexPageServiceImpl implements IndexPageService{
     private LemmaRepository lemmaRepository;
     @Autowired
     private IndexRepository indexRepository;
-
-    private Connection.Response response = null;
+    @Autowired
+    private PageModelUtil pageModelUtil;
     private SiteModel siteModel;
+    private PageModel pageModel;
 
-//    public boolean isCorrectUrl(String url) throws IOException, IOException {
-//        for (Site site : sitesList.getSites()) {
-//            if (url.contains(site.getUrl())) {
-//                response = Jsoup.connect(url)
-//                        .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) " +
-//                                "Chrome/58.0.3029.110 Safari/537.36")
-//                        .referrer("http://www.google.com")
-//                        .execute();
-//                Document doc = response.parse();
-//                String htmlContent = doc.getAllElements().toString();
-//                siteTable = siteId(site);
-//                Page page = saveOrUpdatePage(site, htmlContent, url);
-//                saveOrUpdateLemma(doc, page);
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-//
+    /*
+    Проверьте работу индексации на отдельной странице, указав путь к ней в
+    веб-интерфейсе вашего приложения и запустив её индексацию.
+
+    Не забудьте, что при добавлении страницы в базу данных она должна
+    привязываться к записи в таблице site, которая либо уже должна там
+    находиться, либо должна быть создана на основе одного из пунктов
+    списка сайтов в конфигурации вашего приложения.
+
+    ● В случае попытки индексации страницы с какого-то другого сайта
+    команда API должна выдавать ошибку в соответствии с технической
+    спецификацией. Убедитесь в этом в веб-интерфейсе вашего
+    приложения.
+
+    ● В случае, если переданная страница уже была проиндексирована, перед
+    её индексацией необходимо удалить всю информацию о ней из таблиц
+    page, lemma и index.
+     */
+
+    public boolean isCorrectPageUrl(String url) {
+        sitesList.getSites().forEach(site -> {
+            if (url.contains(site.getUrl())) {
+                try {
+                    Connection.Response response = Jsoup.connect(url)
+                            .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
+                                    "Gecko/20100101 Firefox/25.0")
+                            .referrer("http://www.google.com")
+                            .timeout(3000)
+                            .ignoreHttpErrors(true)
+                            .execute();
+                    int statusCode = response.statusCode(); // может и не пригодится
+                    Document document = response.parse();
+
+                    siteModel = siteId(site);
+                    pageModel = pageModelUtil.createPageModel(url, document, siteModel, statusCode);
+                    saveOrUpdateLemma(document, page);
+
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                }
+                return true;
+            }
+        });
+        return false;
+    }
+
+    //
 //    public Page saveOrUpdatePage(Site site, String content, String url){
 //        String path = url.replaceAll(site.getUrl(),"");
 //        Optional<Page> existingPageOpt  = pageRepositories.findByPath(path);
@@ -104,11 +138,11 @@ public class IndexPageServiceImpl implements IndexPageService{
 //        searchIndexRepositories.save(searchIndex);
 //    }
 //
-//    public SiteTable siteId(Site site) {
-//        List<SiteTable> sites = siteRepositories.findAll();
-//        Optional<SiteTable> matchingSite = sites.stream()
-//                .filter(site1 -> site1.getName().equals(site.getName()))
-//                .findFirst();
-//        return matchingSite.orElse(null);
-//    }
+    public SiteModel siteId(Site site) {
+        List<SiteModel> sites = (List<SiteModel>) siteRepository.findAll();
+        Optional<SiteModel> matchingSite = sites.stream()
+                .filter(site1 -> site1.getName().equals(site.getName()))
+                .findFirst();
+        return matchingSite.orElse(null);
+    }
 }
