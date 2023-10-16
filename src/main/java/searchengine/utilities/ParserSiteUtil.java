@@ -85,9 +85,6 @@ public class ParserSiteUtil extends RecursiveAction {
                     Document document = response.parse();
                     PageModel pageModel = pageModelUtil.createPageModel(link, document, siteModel, statusCode);
                     lemmaModelUtil.createLemmaModel(pageModel, siteModel);
-
-// СЮДА ВПИСАТЬ ПОЛУЧЕНИЕ ЛЕММ
-
                     Elements urls = document.getElementsByTag("a");
                     urls.forEach((innerLink) -> {
                         synchronized (queueLinks) { // ??? НЕ ФАКТ ЧТО НАДО

@@ -7,7 +7,7 @@ import org.hibernate.annotations.NaturalId;
 import javax.persistence.*;
 import java.util.List;
 
-@Entity(name = "page_index")
+@Entity(name = "page")
 @Data
 @NoArgsConstructor
 @Table(indexes = @Index(columnList = "path_page, site_id", name = "path_index", unique = true))
@@ -18,12 +18,16 @@ public class PageModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-//    @NaturalId // естественный ключ - если с path_page, то составной естественный ключ для ускорения запросов
-    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE})
+//    @NaturalId // естественный ключ - в Hibernate если с path_page, то составной естественный ключ для ускорения запросов
+
+    @ManyToOne(fetch = FetchType.LAZY, targetEntity = SiteModel.class, cascade = CascadeType.REMOVE, optional = false)
+//    @JoinColumn(foreignKey = @ForeignKey(name = "site_id_key_page"), columnDefinition = "Integer",
+//            referencedColumnName = "id", name = "site_id")
+//    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE})
     @JoinColumn(name = "site_id")
     private SiteModel siteId;
 
-//    @NaturalId // естественный ключ - если с site_id, то составной естественный ключ для ускорения запросов
+//    @NaturalId // естественный ключ - в Hibernate если с site_id, то составной естественный ключ для ускорения запросов
     @Column(columnDefinition = "TEXT", name = "path_page", nullable = false)
     private String path;
 
@@ -36,6 +40,6 @@ public class PageModel {
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    private SiteModel siteModel;
 //
-//    @OneToMany(mappedBy = "page_index", cascade = CascadeType.REMOVE)
-//    private List<IndexModel> indexModel;
+    @OneToMany(mappedBy = "pageId", cascade = CascadeType.REMOVE)
+    private List<IndexModel> indexModel;
 }

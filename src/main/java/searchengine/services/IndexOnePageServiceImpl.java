@@ -34,6 +34,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     private IndexRepository indexRepository;
     @Autowired
     private PageModelUtil pageModelUtil;
+
     private SiteModel siteModel;
     private PageModel pageModel;
 

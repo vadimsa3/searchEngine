@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import javax.persistence.*;
 
-@Entity(name = "site_index")
+@Entity(name = "site")
 @Data
 @NoArgsConstructor
 
@@ -35,12 +35,9 @@ public class SiteModel {
     @Column(columnDefinition = "VARCHAR(255)", name = "site_name", nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE) // связь с индексаим
-    private List<PageModel> pageModel;
-//
-//    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
-//    private List<LemmaModel> lemmaModel;
-//
-//    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
-//    private List<IndexModel> indexModel;
+    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE) // связь с page
+    private List<PageModel> pageModels;
+
+    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
+    private List<LemmaModel> lemmaModels;
 }

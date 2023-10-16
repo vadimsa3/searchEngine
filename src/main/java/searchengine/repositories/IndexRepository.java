@@ -10,5 +10,5 @@ import java.util.List;
 public interface IndexRepository extends CrudRepository<IndexModel, Integer> {
     List<IndexModel> findByLemmaId(LemmaModel lemmaModel);
     List<IndexModel> findByPageId(PageModel pageModel);
-    void deleteAllIndexById(Integer id);
+    void deleteAllIndexByPageId(Integer id);
 }
