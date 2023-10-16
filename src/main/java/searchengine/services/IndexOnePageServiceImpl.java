@@ -71,7 +71,9 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
                     int statusCode = response.statusCode(); // может и не пригодится
                     Document document = response.parse();
 
+                    // проверка на наличие в списке сайтов, вернет null если не найдет
                     siteModel = siteId(site);
+
                     pageModel = pageModelUtil.createPageModel(url, document, siteModel, statusCode);
                     saveOrUpdateLemma(document, page);
 
@@ -84,28 +86,28 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
         return false;
     }
 
-    //
-//    public Page saveOrUpdatePage(Site site, String content, String url){
-//        String path = url.replaceAll(site.getUrl(),"");
-//        Optional<Page> existingPageOpt  = pageRepositories.findByPath(path);
-//        if(existingPageOpt.isPresent()){
-//            Page existingPage = existingPageOpt.get();
-//            existingPage.setSiteId(siteTable);
-//            existingPage.setCode(response.statusCode());
-//            existingPage.setPath(path);
-//            existingPage.setContent(content);
-//            pageRepositories.save(existingPage);
-//            return existingPage;
-//        }else {
-//            Page newPage = new Page();
-//            newPage.setSiteId(siteTable);
-//            newPage.setCode(response.statusCode());
-//            newPage.setPath(path);
-//            newPage.setContent(content);
-//            pageRepositories.save(newPage);
-//            return newPage;
-//        }
-//    }
+
+    public Page saveOrUpdatePage(Site site, String content, String url) {
+        String path = url.replaceAll(site.getUrl(), "");
+        Optional<Page> existingPageOpt = pageRepositories.findByPath(path);
+        if (existingPageOpt.isPresent()) {
+            Page existingPage = existingPageOpt.get();
+            existingPage.setSiteId(siteTable);
+            existingPage.setCode(response.statusCode());
+            existingPage.setPath(path);
+            existingPage.setContent(content);
+            pageRepositories.save(existingPage);
+            return existingPage;
+        } else {
+            Page newPage = new Page();
+            newPage.setSiteId(siteTable);
+            newPage.setCode(response.statusCode());
+            newPage.setPath(path);
+            newPage.setContent(content);
+            pageRepositories.save(newPage);
+            return newPage;
+        }
+    }
 //
 //    public void saveOrUpdateLemma(Document doc,Page page) throws IOException {
 //        LemmatizationUtils lemmas = new LemmatizationUtils();
@@ -139,6 +141,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
 //        searchIndexRepositories.save(searchIndex);
 //    }
 //
+    // проверка на наличие в списке сайтов, вернет null если не найдет
     public SiteModel siteId(Site site) {
         List<SiteModel> sites = (List<SiteModel>) siteRepository.findAll();
         Optional<SiteModel> matchingSite = sites.stream()

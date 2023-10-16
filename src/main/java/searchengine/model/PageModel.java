@@ -37,9 +37,6 @@ public class PageModel {
     @Column(columnDefinition = "MEDIUMTEXT", name = "page_content", nullable = false)
     private String content;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    private SiteModel siteModel;
-//
     @OneToMany(mappedBy = "pageId", cascade = CascadeType.REMOVE)
     private List<IndexModel> indexModel;
 }

@@ -31,9 +31,6 @@ public class LemmaModel {
     @Column(nullable = false)
     private int frequency;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    private SiteModel siteModel;
-
     @OneToMany(mappedBy = "lemmaId", cascade = CascadeType.REMOVE)
     private Set<IndexModel> indexModel;
 }
