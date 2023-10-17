@@ -61,7 +61,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
             isIndexing(); // потом удалить
             System.out.println(isIndexing()); // потом удалить
             deleteOldDataByUrlSite(site.getUrl());
-            siteModel = siteModelUtil.createSiteModel(site);
+            siteModel = siteModelUtil.createNewSiteModel(site);
             log.info("Start indexing site: " + site.getUrl());
             isIndexing(); // потом удалить
             System.out.println(isIndexing()); // потом удалить
@@ -188,7 +188,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     public boolean startIndexSingleSite(Site site) {
         SiteModel oldSiteModel = siteRepository.findSiteModelByUrl(site.getUrl());
         if (oldSiteModel == null) {
-            siteModel = siteModelUtil.createSiteModel(site);
+            siteModel = siteModelUtil.createNewSiteModel(site);
             log.info("Start indexing single site: " + site.getUrl());
             startParsingSite(site.getUrl());
             log.info("Count pages from site " + siteModel.getName() + " - " + countPagesBySiteId(siteModel));

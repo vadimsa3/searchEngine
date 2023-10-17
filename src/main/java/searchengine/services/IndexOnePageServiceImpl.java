@@ -13,6 +13,8 @@ import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.utilities.LemmaFinderUtil;
+import searchengine.utilities.LemmaModelUtil;
 import searchengine.utilities.PageModelUtil;
 
 import java.io.IOException;
@@ -34,7 +36,8 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     private IndexRepository indexRepository;
     @Autowired
     private PageModelUtil pageModelUtil;
-
+    @Autowired
+    private LemmaModelUtil lemmaModelUtil;
     private SiteModel siteModel;
     private PageModel pageModel;
 
@@ -57,81 +60,94 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     page, lemma и index.
      */
 
-    public boolean isCorrectPageUrl(String url) {
+    // проверка отношения страницы к сайту из списка и репозитория
+    @Override
+    public boolean isCorrectPageUrl(String webPageUrl) {
         sitesList.getSites().forEach(site -> {
-            if (url.contains(site.getUrl())) {
+            if (webPageUrl.contains(site.getUrl())) {
                 try {
-                    Connection.Response response = Jsoup.connect(url)
+                    Connection.Response response = Jsoup.connect(webPageUrl)
                             .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
                                     "Gecko/20100101 Firefox/25.0")
                             .referrer("http://www.google.com")
                             .timeout(3000)
                             .ignoreHttpErrors(true)
                             .execute();
-                    int statusCode = response.statusCode(); // может и не пригодится
+                    int statusCode = response.statusCode();
                     Document document = response.parse();
-
-                    // проверка на наличие в списке сайтов, вернет null если не найдет
-                    siteModel = siteId(site);
-
-                    pageModel = pageModelUtil.createPageModel(url, document, siteModel, statusCode);
-                    saveOrUpdateLemma(document, page);
-
+                    // проверка на наличие в репозитории сайтов, вернет null если не найдет
+                    siteModel = matchingSiteModel(site);
+                    pageModel = saveNewOrUpdateOldPage(site, document, siteModel, statusCode, webPageUrl);
+                    lemmaModelUtil.createNewLemmaModel(pageModel, siteModel);
                 } catch (Exception e) {
                     System.out.println(e.getMessage());
                 }
-                return true;
+                // надо дописать когда возврат true
             }
         });
-        return false;
+        return true; // ДОЛЖНО БЫТЬ ДВА ВАРИАНТА
     }
 
+    // проверка на наличие в репозитории сайта, вернет null если не найдет или SiteModel
+    public SiteModel matchingSiteModel(Site site) {
+        List<SiteModel> siteModels = (List<SiteModel>) siteRepository.findAll();
+        Optional<SiteModel> isMatchingSiteModel = siteModels.stream()
+                .filter(siteModel -> siteModel.getName().equals(site.getName()))
+                .findFirst();
+        return isMatchingSiteModel.orElse(null);
+    }
 
-    public Page saveOrUpdatePage(Site site, String content, String url) {
-        String path = url.replaceAll(site.getUrl(), "");
-        Optional<Page> existingPageOpt = pageRepositories.findByPath(path);
+    public PageModel saveNewOrUpdateOldPage(Site site, Document document, SiteModel siteModel,
+                                            Integer statusCode, String webPageUrl) {
+//        String path = webPageUrl.replaceAll(site.getUrl(), "");
+        String path = webPageUrl.substring(siteModel.getUrl().length());
+        Optional<PageModel> existingPageOpt = pageRepository.findPageByPath(path);
         if (existingPageOpt.isPresent()) {
-            Page existingPage = existingPageOpt.get();
-            existingPage.setSiteId(siteTable);
-            existingPage.setCode(response.statusCode());
-            existingPage.setPath(path);
-            existingPage.setContent(content);
-            pageRepositories.save(existingPage);
-            return existingPage;
+            PageModel existingPageModel = existingPageOpt.get();
+            existingPageModel.setSiteId(siteModel);
+            existingPageModel.setCode(statusCode);
+            existingPageModel.setPath(path);
+            existingPageModel.setContent(document.outerHtml());
+            pageRepository.save(existingPageModel);
+            return existingPageModel;
         } else {
-            Page newPage = new Page();
-            newPage.setSiteId(siteTable);
-            newPage.setCode(response.statusCode());
-            newPage.setPath(path);
-            newPage.setContent(content);
-            pageRepositories.save(newPage);
-            return newPage;
+            return pageModelUtil.createNewPageModel(webPageUrl, document, siteModel, statusCode);
+//            PageModel pageModel = new PageModel();
+//            newPage.setSiteId(siteTable);
+//            newPage.setCode(response.statusCode());
+//            newPage.setPath(path);
+//            newPage.setContent(content);
+//            pageRepositories.save(newPage);
+//            return newPage;
         }
     }
-//
-//    public void saveOrUpdateLemma(Document doc,Page page) throws IOException {
+
+//    public void saveNewOrUpdateOldLemma(PageModel pageModel, SiteModel siteModel) throws IOException {
 //        LemmatizationUtils lemmas = new LemmatizationUtils();
-//        String htmlText = doc.text();
-//        Map<String,Integer> lemmasMap = lemmas.getLemmaMap(htmlText);
-//        for(String word : lemmasMap.keySet() ){
+//        String htmlText = document.text();
+//        Map<String, Integer> lemmasMap = lemmas.getLemmaMap(htmlText);
+//
+//        for (String word : lemmasMap.keySet()) {
 //            int countLemma = lemmasMap.get(word);
 //            Optional<Lemma> existingLemmaOpt = lemmaRepositories.findByLemma(word);
-//            if(existingLemmaOpt.isPresent()){
+//            if (existingLemmaOpt.isPresent()) {
 //                Lemma existingLemma = existingLemmaOpt.get();
 //                int count = existingLemma.getFrequency() + countLemma;
 //                existingLemma.setFrequency(count);
 //                lemmaRepositories.save(existingLemma);
-//                saveSearchIndex(page,existingLemma,count);
-//            }else {
+//                saveSearchIndex(page, existingLemma, count);
+//            } else {
 //                Lemma newLemma = new Lemma();
 //                newLemma.setSiteId(siteTable);
 //                newLemma.setFrequency(countLemma);
 //                newLemma.setLemma(word);
 //                lemmaRepositories.save(newLemma);
-//                saveSearchIndex(page,newLemma,countLemma);
+//                saveSearchIndex(page, newLemma, countLemma);
 //            }
 //        }
 //    }
+}
+
 //
 //    public void saveSearchIndex(Page page,Lemma lemma,int count){
 //        SearchIndex searchIndex = new SearchIndex();
@@ -141,12 +157,3 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
 //        searchIndexRepositories.save(searchIndex);
 //    }
 //
-    // проверка на наличие в списке сайтов, вернет null если не найдет
-    public SiteModel siteId(Site site) {
-        List<SiteModel> sites = (List<SiteModel>) siteRepository.findAll();
-        Optional<SiteModel> matchingSite = sites.stream()
-                .filter(site1 -> site1.getName().equals(site.getName()))
-                .findFirst();
-        return matchingSite.orElse(null);
-    }
-}

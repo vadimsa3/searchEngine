@@ -9,12 +9,10 @@ import java.util.concurrent.RecursiveAction;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.safety.Safelist;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import searchengine.model.LemmaModel;
 import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
 import searchengine.model.StatusSiteIndex;
@@ -83,8 +81,8 @@ public class ParserSiteUtil extends RecursiveAction {
                     Connection.Response response = Jsoup.connect(link).ignoreHttpErrors(true).execute();
                     int statusCode = response.statusCode();
                     Document document = response.parse();
-                    PageModel pageModel = pageModelUtil.createPageModel(link, document, siteModel, statusCode);
-                    lemmaModelUtil.createLemmaModel(pageModel, siteModel);
+                    PageModel pageModel = pageModelUtil.createNewPageModel(link, document, siteModel, statusCode);
+                    lemmaModelUtil.createNewLemmaModel(pageModel, siteModel);
                     Elements urls = document.getElementsByTag("a");
                     urls.forEach((innerLink) -> {
                         synchronized (queueLinks) { // ??? НЕ ФАКТ ЧТО НАДО

@@ -3,13 +3,14 @@ package searchengine.controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.services.IndexOnePageService;
+import searchengine.services.IndexOnePageServiceImpl;
 import searchengine.services.SiteIndexingService;
 import searchengine.services.StatisticsService;
 
@@ -36,6 +37,8 @@ public class ApiController {
     private SiteIndexingService siteIndexingService;
     @Autowired
     private StatisticsService statisticsService;
+    @Autowired
+    private IndexOnePageService indexOnePageService;
 
     /* !!!!!! Контроллер должен только получать данные от пользователя и вызывать нужный сервис.
     Все расчеты и проверки должны быть в классах сервисах. !!!!!!!!
@@ -62,12 +65,11 @@ public class ApiController {
                 : ResponseEntity.ok().body("{\"result\": true}");
     }
 
-
     /*Остановка текущей индексации — GET /api/stopIndexing
     Метод останавливает текущий процесс индексации (переиндексации).
     Если в настоящий момент индексация или переиндексация не происходит, возвращает соответствующее сообщение об ошибке.
     */
-    @GetMapping("/stopIndexing")
+    @GetMapping("/stopIndexing") // НЕ ОСТАНАВЛИВАЕТСЯ ПРИ НАЖАТИИ
     public ResponseEntity<String> stopIndexing() {
         boolean isActive = siteIndexingService.stopIndexingSite();
         return isActive
@@ -75,8 +77,23 @@ public class ApiController {
                 : ResponseEntity.badRequest().body("{\"result\": false, \"error\":\""
                 + "Indexing is not running" + "\"}");
     }
-}
 
+    /*Добавление или обновление отдельной страницы — POST /api/indexPage
+    Метод добавляет в индекс или обновляет отдельную страницу, адрес которой передан в параметре.
+    Если адрес страницы передан неверно, метод должен вернуть соответствующую ошибку.
+    Параметры: url — адрес страницы, которую нужно переиндексировать.
+    * */
+    @PostMapping("/indexPage")
+    public ResponseEntity<?> indexPage(@RequestParam("url") String url) throws IOException {
+        System.out.println(url + " pageUrl"); // потом убрать
+        boolean isCorrect = indexOnePageService.isCorrectPageUrl(url);
+        String errorMessage = "Данная страница находится за пределами сайтов," +
+                "указанных в конфигурационном файле";
+        return isCorrect
+                ? ResponseEntity.ok().body("{\"result\": true}")
+                : ResponseEntity.badRequest().body("{\"result\": false, \"error\":\"" + errorMessage + "\"}");
+    }
+}
 //
 //            Map<String, String> response = new HashMap<>();
 //            SitesList sitesList = new SitesList();
@@ -100,28 +117,7 @@ public class ApiController {
 //    }
 
 
-/*Добавление или обновление отдельной страницы — POST /api/indexPage
-Метод добавляет в индекс или обновляет отдельную страницу, адрес которой передан в параметре.
-Если адрес страницы передан неверно, метод должен вернуть соответствующую ошибку.
-Параметры: url — адрес страницы, которую нужно переиндексировать.
 
-@PostMapping("/indexPage")
-    public void indexPage(@RequestParam String url){
-
-        @GetMapping("/indexPage")
-    public ResponseEntity<?> indexPage(@RequestParam("url") String url) throws IOException {
-        System.out.println(url + " pageUrl");
-        if (indexingPage.isCorrectUrl(url)) {
-            return ResponseEntity.ok().body("{\"result\": true}");
-        } else {
-            String errorMessage = "Данная страница находится за пределами сайтов," +
-                    "указанных в конфигурационном файле";
-            return ResponseEntity.ok().body("{\"result\": false, \"error\":\"" + errorMessage + "\"}");
-        }
-    }
-
-    }
-* */
 
 /*Получение данных по поисковому запросу — GET /api/search
 Метод осуществляет поиск страниц по переданному поисковому запросу (параметр query).

@@ -13,7 +13,7 @@ public class PageModelUtil {
     @Autowired
     private PageRepository pageRepository;
 
-    public PageModel createPageModel(String url, Document document, SiteModel siteModel, Integer statusCode) {
+    public PageModel createNewPageModel(String url, Document document, SiteModel siteModel, Integer statusCode) {
         PageModel pageModel = new PageModel();
         pageModel.setSiteId(siteModel);
         pageModel.setPath(url.substring(siteModel.getUrl().length()));

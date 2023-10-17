@@ -14,7 +14,7 @@ public class SiteModelUtil {
     @Autowired
     private SiteRepository siteRepository;
 
-    public SiteModel createSiteModel(Site site) {
+    public SiteModel createNewSiteModel(Site site) {
         SiteModel siteModel = new SiteModel();
         siteModel.setStatusSiteIndex(StatusSiteIndex.INDEXING);
         siteModel.setStatusTime(LocalDateTime.now());
