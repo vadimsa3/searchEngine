@@ -38,8 +38,6 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     private PageModelUtil pageModelUtil;
     @Autowired
     private LemmaModelUtil lemmaModelUtil;
-    private SiteModel siteModel;
-    private PageModel pageModel;
 
     /*
     Проверьте работу индексации на отдельной странице, указав путь к ней в
@@ -63,10 +61,12 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     // проверка отношения страницы к сайту из списка и репозитория
     @Override
     public boolean isCorrectPageUrl(String webPageUrl) {
-        sitesList.getSites().forEach(site -> {
-            if (webPageUrl.contains(site.getUrl())) {
-                try {
-                    Connection.Response response = Jsoup.connect(webPageUrl)
+//        sitesList.getSites().forEach(site -> {
+        for (Site site : sitesList.getSites()) {
+            try {
+                if (webPageUrl.contains(site.getUrl())) {
+                    Connection.Response response = null;
+                    response = Jsoup.connect(webPageUrl)
                             .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
                                     "Gecko/20100101 Firefox/25.0")
                             .referrer("http://www.google.com")
@@ -76,21 +76,22 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
                     int statusCode = response.statusCode();
                     Document document = response.parse();
                     // проверка на наличие в репозитории сайтов, вернет null если не найдет
-                    siteModel = matchingSiteModel(site);
-                    pageModel = saveNewOrUpdateOldPage(site, document, siteModel, statusCode, webPageUrl);
+                    SiteModel siteModel = matchingSiteModel(site);
+                    PageModel pageModel = saveNewOrUpdateOldPage(site, document, siteModel, statusCode, webPageUrl);
                     lemmaModelUtil.createNewLemmaModel(pageModel, siteModel);
-                } catch (Exception e) {
-                    System.out.println(e.getMessage());
+                    return true;
                 }
-                // надо дописать когда возврат true
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        });
-        return true; // ДОЛЖНО БЫТЬ ДВА ВАРИАНТА
+        }
+        return false;
     }
 
     // проверка на наличие в репозитории сайта, вернет null если не найдет или SiteModel
     public SiteModel matchingSiteModel(Site site) {
         List<SiteModel> siteModels = (List<SiteModel>) siteRepository.findAll();
+        System.out.println("!!!!!" + siteModels.size()); // удвлить
         Optional<SiteModel> isMatchingSiteModel = siteModels.stream()
                 .filter(siteModel -> siteModel.getName().equals(site.getName()))
                 .findFirst();
@@ -99,8 +100,8 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
 
     public PageModel saveNewOrUpdateOldPage(Site site, Document document, SiteModel siteModel,
                                             Integer statusCode, String webPageUrl) {
-//        String path = webPageUrl.replaceAll(site.getUrl(), "");
-        String path = webPageUrl.substring(siteModel.getUrl().length());
+        String path = webPageUrl.replaceAll(site.getUrl(), "");
+//        String path = webPageUrl.substring(siteModel.getUrl().length());
         Optional<PageModel> existingPageOpt = pageRepository.findPageByPath(path);
         if (existingPageOpt.isPresent()) {
             PageModel existingPageModel = existingPageOpt.get();
