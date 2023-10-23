@@ -3,6 +3,8 @@ package searchengine.services;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
@@ -16,6 +18,7 @@ import searchengine.repositories.SiteRepository;
 import searchengine.utilities.LemmaFinderUtil;
 import searchengine.utilities.LemmaModelUtil;
 import searchengine.utilities.PageModelUtil;
+import searchengine.utilities.SiteModelUtil;
 
 import java.io.IOException;
 import java.util.List;
@@ -38,6 +41,12 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     private PageModelUtil pageModelUtil;
     @Autowired
     private LemmaModelUtil lemmaModelUtil;
+    @Autowired
+    private SiteModelUtil siteModelUtil;
+    @Autowired
+    private SiteIndexingServiceImpl siteIndexingService;
+    private static final Logger log = LoggerFactory.getLogger(SiteIndexingServiceImpl.class);
+    private Boolean isThreadsRunning = null;
 
     /*
     Проверьте работу индексации на отдельной странице, указав путь к ней в
@@ -65,20 +74,22 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
         for (Site site : sitesList.getSites()) {
             try {
                 if (webPageUrl.contains(site.getUrl())) {
-                    Connection.Response response = null;
-                    response = Jsoup.connect(webPageUrl)
-                            .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
-                                    "Gecko/20100101 Firefox/25.0")
-                            .referrer("http://www.google.com")
-                            .timeout(3000)
-                            .ignoreHttpErrors(true)
-                            .execute();
+                    log.info("Start indexing single page: " + site.getUrl());
+                    Connection.Response response =
+                            Jsoup.connect(webPageUrl)
+                                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
+                                            "Gecko/20100101 Firefox/25.0")
+                                    .referrer("http://www.google.com")
+                                    .timeout(3000)
+                                    .ignoreHttpErrors(true)
+                                    .execute();
                     int statusCode = response.statusCode();
                     Document document = response.parse();
-                    // проверка на наличие в репозитории сайтов, вернет null если не найдет
+                    // проверка на наличие в репозитории сайтов
                     SiteModel siteModel = matchingSiteModel(site);
                     PageModel pageModel = saveNewOrUpdateOldPage(site, document, siteModel, statusCode, webPageUrl);
                     lemmaModelUtil.createNewLemmaModel(pageModel, siteModel);
+                    log.info("Page indexing completed: " + site.getUrl());
                     return true;
                 }
             } catch (IOException e) {
@@ -90,12 +101,38 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
 
     // проверка на наличие в репозитории сайта, вернет null если не найдет или SiteModel
     public SiteModel matchingSiteModel(Site site) {
-        List<SiteModel> siteModels = (List<SiteModel>) siteRepository.findAll();
-        System.out.println("!!!!!" + siteModels.size()); // удвлить
+        List<SiteModel> siteModels = siteRepository.findAll();
         Optional<SiteModel> isMatchingSiteModel = siteModels.stream()
                 .filter(siteModel -> siteModel.getName().equals(site.getName()))
                 .findFirst();
-        return isMatchingSiteModel.orElse(null);
+        return isMatchingSiteModel.orElse(siteModelUtil.createNewSiteModel(site));
+
+//
+//        if (siteModel != null) {
+//            siteIndexingService.deleteOldDataByUrlSite(site.getUrl());
+//
+//            siteIndexingService.startParsingSite(site.getUrl());  // reindexing
+//        } else {
+//            SiteModel siteModel = siteModelUtil.createNewSiteModel(site);
+//            log.info("Start indexing single site: " + site.getUrl());
+//            siteIndexingService.startParsingSite(site.getUrl());
+//            log.info("Count pages from site " + siteModel.getName() + " - "
+//                    + siteIndexingService.countPagesBySiteId(siteModel));
+//            log.info("Site indexing completed: " + site.getUrl());
+//        }
+    }
+    public void startIndexSingleSite(Site site) {
+        SiteModel oldSiteModel = siteRepository.findSiteModelByUrl(site.getUrl());
+        if (oldSiteModel != null) {
+            siteIndexingService.deleteOldDataByUrlSite(site.getUrl());
+            siteIndexingService.startParsingSite(site.getUrl());  // reindexing
+        } else {
+            SiteModel siteModel = siteModelUtil.createNewSiteModel(site);
+            log.info("Start indexing single site: " + site.getUrl());
+            siteIndexingService.startParsingSite(site.getUrl());
+            log.info("Count pages from site " + siteModel.getName() + " - " + siteIndexingService.countPagesBySiteId(siteModel));
+            log.info("Site indexing completed: " + site.getUrl());
+        }
     }
 
     public PageModel saveNewOrUpdateOldPage(Site site, Document document, SiteModel siteModel,
@@ -122,6 +159,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
 //            return newPage;
         }
     }
+}
 
 //    public void saveNewOrUpdateOldLemma(PageModel pageModel, SiteModel siteModel) throws IOException {
 //        LemmatizationUtils lemmas = new LemmatizationUtils();
@@ -147,7 +185,6 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
 //            }
 //        }
 //    }
-}
 
 //
 //    public void saveSearchIndex(Page page,Lemma lemma,int count){

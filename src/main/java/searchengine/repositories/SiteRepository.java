@@ -11,6 +11,7 @@ import java.util.List;
 @Repository
 public interface SiteRepository extends CrudRepository<SiteModel, Integer> {
     SiteModel findSiteModelByUrl(String urlSite);
+    List<SiteModel> findAll();
 
 
     //    int countByStatus(StatusSiteIndex statusSiteIndex);
