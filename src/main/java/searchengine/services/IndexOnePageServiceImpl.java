@@ -46,7 +46,6 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     @Autowired
     private SiteIndexingServiceImpl siteIndexingService;
     private static final Logger log = LoggerFactory.getLogger(SiteIndexingServiceImpl.class);
-    private Boolean isThreadsRunning = null;
 
     /*
     Проверьте работу индексации на отдельной странице, указав путь к ней в
@@ -69,8 +68,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
 
     // проверка отношения страницы к сайту из списка и репозитория
     @Override
-    public boolean isCorrectPageUrl(String webPageUrl) {
-//        sitesList.getSites().forEach(site -> {
+    public boolean indexOnePageByUrl(String webPageUrl) {
         for (Site site : sitesList.getSites()) {
             try {
                 if (webPageUrl.contains(site.getUrl())) {
@@ -87,6 +85,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
                     Document document = response.parse();
                     // проверка на наличие в репозитории сайтов
                     SiteModel siteModel = matchingSiteModel(site);
+            System.out.println("Site model " + siteModel.getName() + siteModel.getStatusTime());
                     PageModel pageModel = saveNewOrUpdateOldPage(site, document, siteModel, statusCode, webPageUrl);
                     lemmaModelUtil.createNewLemmaModel(pageModel, siteModel);
                     log.info("Page indexing completed: " + site.getUrl());
@@ -102,46 +101,35 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     // проверка на наличие в репозитории сайта, вернет null если не найдет или SiteModel
     public SiteModel matchingSiteModel(Site site) {
         List<SiteModel> siteModels = siteRepository.findAll();
+        System.out.println("Site repo " + siteModels.size());
         Optional<SiteModel> isMatchingSiteModel = siteModels.stream()
                 .filter(siteModel -> siteModel.getName().equals(site.getName()))
                 .findFirst();
         return isMatchingSiteModel.orElse(siteModelUtil.createNewSiteModel(site));
+    }
 
-//
-//        if (siteModel != null) {
+
+//    public void startIndexSingleSite(Site site) {
+//        SiteModel oldSiteModel = siteRepository.findSiteModelByUrl(site.getUrl());
+//        if (oldSiteModel != null) {
 //            siteIndexingService.deleteOldDataByUrlSite(site.getUrl());
-//
 //            siteIndexingService.startParsingSite(site.getUrl());  // reindexing
 //        } else {
 //            SiteModel siteModel = siteModelUtil.createNewSiteModel(site);
 //            log.info("Start indexing single site: " + site.getUrl());
 //            siteIndexingService.startParsingSite(site.getUrl());
-//            log.info("Count pages from site " + siteModel.getName() + " - "
-//                    + siteIndexingService.countPagesBySiteId(siteModel));
+//            log.info("Count pages from site " + siteModel.getName() + " - " + siteIndexingService.countPagesBySiteId(siteModel));
 //            log.info("Site indexing completed: " + site.getUrl());
 //        }
-    }
-    public void startIndexSingleSite(Site site) {
-        SiteModel oldSiteModel = siteRepository.findSiteModelByUrl(site.getUrl());
-        if (oldSiteModel != null) {
-            siteIndexingService.deleteOldDataByUrlSite(site.getUrl());
-            siteIndexingService.startParsingSite(site.getUrl());  // reindexing
-        } else {
-            SiteModel siteModel = siteModelUtil.createNewSiteModel(site);
-            log.info("Start indexing single site: " + site.getUrl());
-            siteIndexingService.startParsingSite(site.getUrl());
-            log.info("Count pages from site " + siteModel.getName() + " - " + siteIndexingService.countPagesBySiteId(siteModel));
-            log.info("Site indexing completed: " + site.getUrl());
-        }
-    }
+//    }
 
     public PageModel saveNewOrUpdateOldPage(Site site, Document document, SiteModel siteModel,
                                             Integer statusCode, String webPageUrl) {
         String path = webPageUrl.replaceAll(site.getUrl(), "");
-//        String path = webPageUrl.substring(siteModel.getUrl().length());
-        Optional<PageModel> existingPageOpt = pageRepository.findPageByPath(path);
-        if (existingPageOpt.isPresent()) {
-            PageModel existingPageModel = existingPageOpt.get();
+        // ПЕРЕЗАПИШЕМ ДАННЫЕ В СУЩЕСТВУЮЩЕЙ ЗАПИСИ ЕСЛИ ОНА ЕСТЬ ИЛИ СОЗДАЕМ НОВУЮ СТРАНИЦ
+        Optional<PageModel> existingPage = pageRepository.findPageByPath(path);
+        if (existingPage.isPresent()) {
+            PageModel existingPageModel = existingPage.get();
             existingPageModel.setSiteId(siteModel);
             existingPageModel.setCode(statusCode);
             existingPageModel.setPath(path);

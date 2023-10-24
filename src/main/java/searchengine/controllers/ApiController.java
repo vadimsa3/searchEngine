@@ -4,13 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import searchengine.dto.statistics.StatisticsResponse;
-import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.IndexOnePageService;
-import searchengine.services.IndexOnePageServiceImpl;
 import searchengine.services.SiteIndexingService;
 import searchengine.services.StatisticsService;
 
@@ -86,7 +83,7 @@ public class ApiController {
     @PostMapping("/indexPage")
     public ResponseEntity<?> indexPage(@RequestParam("url") String url) throws IOException {
         System.out.println("Start indexing pageUrl " + url); // потом убрать
-        boolean isCorrect = indexOnePageService.isCorrectPageUrl(url);
+        boolean isCorrect = indexOnePageService.indexOnePageByUrl(url);
         String errorMessage = "Данная страница находится за пределами сайтов," +
                 "указанных в конфигурационном файле";
         return isCorrect

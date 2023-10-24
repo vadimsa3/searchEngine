@@ -12,5 +12,6 @@ import searchengine.model.SiteModel;
 public interface PageRepository extends CrudRepository<PageModel, Integer> {
     Optional<PageModel> findPageByPath(String path);
     void deleteAllDataById(Integer id);
+    void deletePageModelByPath(String path);
     List<PageModel> findAllPagesBySiteId(SiteModel siteModel);
 }
