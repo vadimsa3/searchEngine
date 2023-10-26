@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ForkJoinPool;
 
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +45,9 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     @Autowired
     private IndexRepository indexRepository;
 
+    @Getter
     private static String domainName;
+
     private static Set<String> visitedLinks = ConcurrentHashMap.newKeySet();
     private static Queue<String> queueLinks = new ConcurrentLinkedQueue();
     private static final HashMap<Integer, String> lastError = new HashMap();
@@ -103,25 +106,24 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         }
     }
 
-    public static String getDomainName() {
-        return domainName;
-    }
-
     public Integer countPagesBySiteId(SiteModel siteModel) {
         return (pageRepository.findAllPagesBySiteId(siteModel).size());
     }
 
     public void deleteOldDataByUrlSite(String urlSite) {
-        SiteModel siteModelToDelete = siteRepository.findSiteModelByUrl(urlSite);
-        if (siteModelToDelete != null) {
-
-
-////            indexRepository.deleteAllIndexById(siteModelToDelete.getId());
-//            lemmaRepository.deleteAllLemmasById(siteModelToDelete.getId());
-//            pageRepository.deleteAllDataById(siteModelToDelete.getId());
-            siteRepository.delete(siteModelToDelete);
+        List<SiteModel> listModelsToDelete = siteRepository.findSiteModelsByUrl(urlSite);
+        if (!listModelsToDelete.isEmpty()) {
+            for (SiteModel siteModelToDelete : listModelsToDelete) {
+                siteRepository.delete(siteModelToDelete);
+            }
         }
     }
+//        SiteModel siteModelToDelete = siteRepository.findSiteModelByUrl(urlSite);
+//        if (siteModelToDelete != null) {
+//////            indexRepository.deleteAllIndexById(siteModelToDelete.getId());
+////            lemmaRepository.deleteAllLemmasById(siteModelToDelete.getId());
+////            pageRepository.deleteAllDataById(siteModelToDelete.getId());
+//            siteRepository.delete(siteModelToDelete);
 
     @Override
     public boolean isIndexing() {
@@ -131,7 +133,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
                 list.add(siteModel);
             }
         });
-        return list.size() != 0;
+        return !list.isEmpty();
     }
 
     @Override
@@ -184,6 +186,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 //    }
 
 
+    // НА УДАЛЕНИЕ ВЕРОЯТНО
     @Override
     public boolean startIndexSingleSite(Site site) {
         SiteModel oldSiteModel = siteRepository.findSiteModelByUrl(site.getUrl());

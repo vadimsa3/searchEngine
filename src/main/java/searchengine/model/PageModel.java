@@ -1,14 +1,17 @@
 package searchengine.model;
 
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.NaturalId;
 
 import javax.persistence.*;
 import java.util.List;
 
 @Entity(name = "page")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @Table(indexes = @Index(columnList = "path_page, site_id", name = "path_index", unique = true))
 

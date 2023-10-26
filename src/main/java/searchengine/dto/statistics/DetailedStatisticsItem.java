@@ -1,11 +1,14 @@
 package searchengine.dto.statistics;
 
-import lombok.Data;
+import lombok.*;
 import searchengine.model.StatusSiteIndex;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode
 public class DetailedStatisticsItem {
     private String url;
     private String name;

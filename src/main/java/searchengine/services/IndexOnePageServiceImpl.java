@@ -15,7 +15,6 @@ import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
-import searchengine.utilities.LemmaFinderUtil;
 import searchengine.utilities.LemmaModelUtil;
 import searchengine.utilities.PageModelUtil;
 import searchengine.utilities.SiteModelUtil;
@@ -85,7 +84,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
                     Document document = response.parse();
                     // проверка на наличие в репозитории сайтов
                     SiteModel siteModel = matchingSiteModel(site);
-            System.out.println("Site model " + siteModel.getName() + siteModel.getStatusTime());
+System.out.println("Site model " + siteModel.getName() + "Creating time " + siteModel.getStatusTime());
                     PageModel pageModel = saveNewOrUpdateOldPage(site, document, siteModel, statusCode, webPageUrl);
                     lemmaModelUtil.createNewLemmaModel(pageModel, siteModel);
                     log.info("Page indexing completed: " + site.getUrl());
@@ -98,15 +97,41 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
         return false;
     }
 
-    // проверка на наличие в репозитории сайта, вернет null если не найдет или SiteModel
-    public SiteModel matchingSiteModel(Site site) {
-        List<SiteModel> siteModels = siteRepository.findAll();
-        System.out.println("Site repo " + siteModels.size());
-        Optional<SiteModel> isMatchingSiteModel = siteModels.stream()
-                .filter(siteModel -> siteModel.getName().equals(site.getName()))
-                .findFirst();
-        return isMatchingSiteModel.orElse(siteModelUtil.createNewSiteModel(site));
+    /* проверка на наличие в репозитории сайта, вернет null если не найдет или SiteModel
+    проверяем по
+        если модель сайта есть в репозитории (также проверим на пустоту репозитория):
+     - ничего с моделью сайта не делаем,
+     - проверяем на наличие в репозитории страниц страницы по path,
+        если есть - обновляем в ней данные (или удаляем в ней данные - должны удалится связанные леммы и индексы +
+     парсим страницу и создаем новую с id сайта, модель которого нашли)
+        если нет - парсим страницу и создаем новую с id сайта, модель которого нашли.
+
+        если модели сайта нет в репозитории:
+     - проверяем на наличие сайта в списке конфигурации,
+        если есть - создаем модель сайта, парсим страницу, создаем страницу, леммы, индексы.
+        если нет - выводим сообщение о не нахождении в списке.
+     */
+//    public SiteModel matchingSiteModel(String webPageUrl) {
+//        String domainWebName = webPageUrl.replaceAll("http(s)?://|www\\.|/.*", "");
+//
+//    }
+
+        public void matchingSiteModel(String webPageUrl) {
+        String domainWebName = webPageUrl.replaceAll("http(s)?://|www\\.|/.*", "");
+            System.out.println("DOMAIN " + domainWebName);
+
     }
+
+//        public SiteModel matchingSiteModel(Site site) {
+////        List<SiteModel> siteModels = siteRepository.findAll();
+//
+//
+//        List<SiteModel> siteModels = siteRepository.findAll();
+//        Optional<SiteModel> isMatchingSiteModel = siteModels.stream()
+//                .filter(siteModel -> siteModel.getName().equals(site.getName()))
+//                .findFirst();
+//        return isMatchingSiteModel.orElse(siteModelUtil.createNewSiteModel(site));
+//    }
 
 
 //    public void startIndexSingleSite(Site site) {

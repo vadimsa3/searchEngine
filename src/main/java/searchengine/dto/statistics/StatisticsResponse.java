@@ -1,8 +1,11 @@
 package searchengine.dto.statistics;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode
 public class StatisticsResponse {
     private boolean result;
     private StatisticsData statistics;
