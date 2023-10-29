@@ -136,6 +136,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         return !list.isEmpty();
     }
 
+    // !!! НАДО ДОРАБОТАТЬ НЕ ОСТАНАВЛИВАЕТ
     @Override
     public boolean stopIndexingSite() {
         if (isIndexing()) {

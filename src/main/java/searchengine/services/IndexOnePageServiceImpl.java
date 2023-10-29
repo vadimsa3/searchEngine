@@ -68,10 +68,15 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     // проверка отношения страницы к сайту из списка и репозитория
     @Override
     public boolean indexOnePageByUrl(String webPageUrl) {
+        String domainWebName = webPageUrl.replaceAll("http(s)?://|www\\.|/.*", "");
         for (Site site : sitesList.getSites()) {
             try {
                 if (webPageUrl.contains(site.getUrl())) {
-                    log.info("Start indexing single page: " + site.getUrl());
+                    // проверка на наличие в репозитории сайтов и в списке конфигурации
+                    SiteModel siteModel = getSiteModel(domainWebName, site);
+                    System.out.println("****" + siteModel.getName() + " " + siteModel.getStatusTime());
+
+                    log.info("Start indexing single page: " + domainWebName);
                     Connection.Response response =
                             Jsoup.connect(webPageUrl)
                                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
@@ -82,9 +87,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
                                     .execute();
                     int statusCode = response.statusCode();
                     Document document = response.parse();
-                    // проверка на наличие в репозитории сайтов
-                    isSiteRepositoryContainsSiteModel(webPageUrl, site);
-
+                    log.info("End indexing single page: " + site.getUrl());
 
 //                    matchingSiteModel(webPageUrl);
 //                    SiteModel siteModel = matchingSiteModel(site);
@@ -94,16 +97,54 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
 //                    log.info("Page indexing completed: " + site.getUrl());
 //                    return true;
                 }
+                return true;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
+        log.error("Данная страница находится за пределами сайтов," +
+                "указанных в конфигурационном файле");
         return false;
     }
 
+
+//        for (Site site : sitesList.getSites()) {
+//            try {
+//                if (webPageUrl.contains(site.getUrl())) {
+//                    log.info("Start indexing single page: " + site.getUrl());
+//                    Connection.Response response =
+//                            Jsoup.connect(webPageUrl)
+//                                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
+//                                            "Gecko/20100101 Firefox/25.0")
+//                                    .referrer("http://www.google.com")
+//                                    .timeout(3000)
+//                                    .ignoreHttpErrors(true)
+//                                    .execute();
+//                    int statusCode = response.statusCode();
+//                    Document document = response.parse();
+//
+//                    // проверка на наличие в репозитории сайтов и в списке конфигурации
+//                    SiteModel siteModel = getSiteModel(domainWebName, site);
+//                    System.out.println("****" + siteModel.getName() + " " + siteModel.getStatusTime());
+//
+////                    matchingSiteModel(webPageUrl);
+////                    SiteModel siteModel = matchingSiteModel(site);
+////                    System.out.println("Site model " + siteModel.getName() + "Creating time " + siteModel.getStatusTime());
+////                    PageModel pageModel = saveNewOrUpdateOldPage(site, document, siteModel, statusCode, webPageUrl);
+////                    lemmaModelUtil.createNewLemmaModel(pageModel, siteModel);
+////                    log.info("Page indexing completed: " + site.getUrl());
+////                    return true;
+//                }
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
+//        return false;
+//    }
+
     /* проверка на наличие в репозитории сайта, вернет null если не найдет или SiteModel
     проверяем по
-        если модель сайта есть в репозитории (также проверим на пустоту репозитория):
+        если модель сайта есть в репозитории:
      - ничего с моделью сайта не делаем,
      - проверяем на наличие в репозитории страниц наличие страницы по path,
         если есть - обновляем в ней данные (или удаляем в ней данные - должны удалится связанные леммы и индексы +
@@ -111,37 +152,76 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
         если нет - парсим страницу и создаем новую с id сайта, модель которого нашли.
 
         если модели сайта нет в репозитории:
-     - проверяем на наличие сайта в списке конфигурации,
-        если есть - создаем новую модель сайта, парсим страницу, создаем страницу, леммы, индексы.
+     - проверяем на наличие записи с переданным weburl в списке конфигурации,
+        если есть - создаем новую модель сайта c weburl, парсим страницу, создаем страницу, леммы, индексы.
         если нет - выводим сообщение о не нахождении в списке.
      */
 
     //
-
-
-    public boolean isSiteRepositoryContainsSiteModel(String webPageUrl, Site site) {
-        String domainWebName = webPageUrl.replaceAll("http(s)?://|www\\.|/.*", "");
-        System.out.println("PAGE DOMAIN NAME " + domainWebName);
-        List<SiteModel> siteModelsList = siteRepository.findAll();
-        for (SiteModel siteModel : siteModelsList) {
-            if (siteModel.getUrl().contains(domainWebName)) {
-                return true;
-            } else {
-                isListSitesContainsSiteModel(siteModel, site);
-            }
-        }
-        return false;
-    }
-
-    private void isListSitesContainsSiteModel(SiteModel siteModel, Site site) {
-        if (siteModel.getUrl().equals(site.getUrl())) {
-            log.info("Добавлена новая модель сайта");
-            SiteModel newSiteModel = siteModelUtil.createNewSiteModel(site);
+    public SiteModel getSiteModel(String domainWebName, Site site) {
+        SiteModel siteModel = isSiteRepositoryContainsSiteModel(domainWebName);
+        if (siteModel == null) {
+            System.out.println("!!! Пустой репозиторий или нет модели - Надо что-то делать!!!");
+//            // проверяем список конфигурации и добавляем новую модель
+//            System.out.println("В списке ? - " + isListSitesContainsWebPageUrl(domainWebName));
+            siteModel = siteModelUtil.createNewSiteModel(site);
+            log.info("В репозиторий добавлена новая модель сайта - "
+                    + siteModel.getUrl() + " "
+                    + siteModel.getStatusTime());
         } else {
-            log.error("Данная страница находится за пределами сайтов," +
-                    "указанных в конфигурационном файле");
+            // получаем модель из репозитория
+            System.out.println("Все ОК " + siteModel.getName() + "  " + siteModel.getStatusTime());
         }
+        return siteModel;
     }
+
+    public SiteModel isSiteRepositoryContainsSiteModel(String domainWebName) {
+        System.out.println("PAGE DOMAIN NAME IS - " + domainWebName);
+        List<SiteModel> siteModelsList = siteRepository.findAll();
+        SiteModel newSiteModel = null;
+        if (!siteModelsList.isEmpty()) {
+            for (SiteModel siteModel : siteModelsList) {
+                if (!siteModel.getUrl().contains(domainWebName)) {
+                    log.info("В репозитории отсутствует модель сайта с url - " + domainWebName);
+                    return null;
+                } else {
+                    log.info("В репозитории уже есть модель сайта с url - " + domainWebName);
+                    newSiteModel = siteModel;
+                    System.out.println("ВОТ ОНА " + newSiteModel.getName() + "  " + newSiteModel.getStatusTime());
+                }
+            }
+        } else {
+            log.info("В репозитории нет объектов");
+            return null;
+        }
+        return newSiteModel;
+    }
+
+//    private Site isListSitesContainsWebPageUrl(String domainWebName) {
+//        Site newSite = new Site();
+//        for (Site site : sitesList.getSites()) {
+//            if (!site.getUrl().contains(domainWebName)) {
+//                log.error("Данная страница находится за пределами сайтов," +
+//                        "указанных в конфигурационном файле");
+//            }
+//                log.info("Данная страница находится в пределах сайтов," +
+//                        "указанных в конфигурационном файле");
+//            newSite = site;
+//        }
+//        return newSite;
+//    }
+
+
+//    private boolean isListSitesContainsWebPageUrl(String domainWebName, Site site) {
+//        if (!site.getUrl().contains(domainWebName)) {
+//            log.error("Данная страница находится за пределами сайтов," +
+//                    "указанных в конфигурационном файле");
+//            return false;
+//        }
+//        log.info("Данная страница находится в пределах сайтов," +
+//                "указанных в конфигурационном файле");
+//        return true;
+//    }
 
 //    public SiteModel matchingSiteModel(String webPageUrl, Site site) {
 //        String domainWebName = webPageUrl.replaceAll("http(s)?://|www\\.|/.*", "");
