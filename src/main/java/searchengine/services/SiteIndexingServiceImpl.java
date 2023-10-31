@@ -80,6 +80,8 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     public boolean startParsingSite(String url) {
         String[] tmpArray = url.split("/");
         domainName = tmpArray[2];
+//        или так проверить
+//        String domainWebName = url.replaceAll("http(s)?://|www\\.|/.*", "");
         queueLinks.add(url);
         List<ParserSiteUtil> taskListLinkParsers = new ArrayList<>();
         for (int threads = 0; threads < Runtime.getRuntime().availableProcessors(); ++threads) {
