@@ -9,18 +9,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
+import searchengine.model.IndexModel;
+import searchengine.model.LemmaModel;
 import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
 import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
-import searchengine.utilities.LemmaModelUtil;
-import searchengine.utilities.PageModelUtil;
-import searchengine.utilities.SiteModelUtil;
+import searchengine.utilities.*;
 
 import java.io.IOException;
-import java.util.Optional;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,13 +43,16 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     @Autowired
     private LemmaModelUtil lemmaModelUtil;
     @Autowired
+    private LemmaFinderUtil lemmaFinderUtil;
+    @Autowired
+    private IndexModelUtil indexModelUtil;
+    @Autowired
     private SiteModelUtil siteModelUtil;
     @Autowired
     private SiteIndexingServiceImpl siteIndexingService;
 
     private static final Logger log = LoggerFactory.getLogger(SiteIndexingServiceImpl.class);
     private String urlSiteFromWebPageUrl;
-    private boolean result;
 
     /*
     Проверьте работу индексации на отдельной странице, указав путь к ней в
@@ -61,8 +65,8 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
 
     ● В случае попытки индексации страницы с какого-то другого сайта
     команда API должна выдавать ошибку в соответствии с технической
-    спецификацией. Убедитесь в этом в веб-интерфейсе вашего
-    приложения.
+    спецификацией.
+    Убедитесь в этом в веб-интерфейсе вашего приложения.
 
     ● В случае, если переданная страница уже была проиндексирована, перед
     её индексацией необходимо удалить всю информацию о ней из таблиц
@@ -71,13 +75,11 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
 
     @Override
     public boolean indexOnePageByUrl(String webPageUrl) {
-//        String domainWebName = webPageUrl.replaceAll("http(s)?://|www\\.|/.*", "");
-        // !!!! сделать проверку если передается webPageUrl пустая = null !!!
         Site site = isListSitesContainsWebPageUrl(webPageUrl);
-        System.out.println("Сайт для дальнейшей работы - " + site.getName() + " " + site.getUrl());
+        System.out.println("!!! Сайт для дальнейшей работы - " + site.getName() + " " + site.getUrl());
+        boolean result;
         try {
-            if (site == null | isEmptyWebPageUrl(webPageUrl)) {
-                System.out.println("SITE.getUrl() = " + site.getUrl());
+            if (site.getUrl() == null | isEmptyWebPageUrl(webPageUrl)) {
                 log.error("Данная страница находится за пределами сайтов," +
                         "указанных в конфигурационном файле");
                 result = false;
@@ -96,20 +98,10 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
                 int statusCode = response.statusCode();
                 Document document = response.parse();
                 log.info("End indexing single page: " + webPageUrl);
-
                 PageModel pageModel = saveNewOrUpdateOldPage(site, document, siteModel, statusCode, webPageUrl);
-
-
+                saveNewOrUpdateOldLemma(pageModel, siteModel, document);
+                log.info("Page indexing completed");
                 result = true;
-
-//                    matchingSiteModel(webPageUrl);
-//                    SiteModel siteModel = matchingSiteModel(site);
-//                    System.out.println("Site model " + siteModel.getName() + "Creating time " + siteModel.getStatusTime());
-//
-//                    PageModel pageModel = saveNewOrUpdateOldPage(site, document, siteModel, statusCode, webPageUrl);
-//                    lemmaModelUtil.createNewLemmaModel(pageModel, siteModel);
-//                    log.info("Page indexing completed: " + site.getUrl());
-//                    return true;
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -117,7 +109,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
         return result;
     }
 
-    private boolean isEmptyWebPageUrl(String webPageUrl){
+    private boolean isEmptyWebPageUrl(String webPageUrl) {
         System.out.println("Переданный адрес isEmpty ? " + webPageUrl.isBlank());
         return webPageUrl.isBlank();
     }
@@ -194,41 +186,56 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
         System.out.println("СООТВЕТСТВУЕТ МОДЕЛИ САЙТА " + newSite);
         return newSite;
     }
-        public void matchingPageModel (String webPageUrl, SiteModel siteModel, Document document, Integer statusCode){
-            String path = webPageUrl.substring(siteModel.getUrl().length());
-            PageModel pageModel = pageRepository.findByPath(path);
-            if (pageModel != null) {
-                pageRepository.delete(pageModel);
-                pageModelUtil.createNewPageModel(webPageUrl, document, siteModel, statusCode);
-            }
-        }
 
-    public PageModel saveNewOrUpdateOldPage (Site site, Document document, SiteModel siteModel,
-                                             Integer statusCode, String webPageUrl){
+    public PageModel isPageRepositoryContainsPageModel(String webPageUrl, SiteModel siteModel) {
+        System.out.println("-------- Начало работы isPageRepositoryContainsPageModel ------------");
+        String path = webPageUrl.substring(siteModel.getUrl().length());
+        System.out.println("Найдена модель страницы в репозитории ? " + pageRepository.findByPath(path));
+        return pageRepository.findByPath(path);
+    }
+
+    public PageModel saveNewOrUpdateOldPage(Site site, Document document, SiteModel siteModel,
+                                            Integer statusCode, String webPageUrl) {
+        System.out.println("-------- Начало работы saveNewOrUpdateOldPage ------------");
         String path = webPageUrl.replaceAll(site.getUrl(), "");
-        // ПЕРЕЗАПИШЕМ ДАННЫЕ В СУЩЕСТВУЮЩЕЙ ЗАПИСИ ЕСЛИ ОНА ЕСТЬ ИЛИ СОЗДАЕМ НОВУЮ СТРАНИЦ
-        Optional<PageModel> existingPage = pageRepository.findPageByPath(path);
-        if (existingPage.isPresent()) {
-            PageModel existingPageModel = existingPage.get();
-            existingPageModel.setSiteId(siteModel);
-            existingPageModel.setCode(statusCode);
-            existingPageModel.setPath(path);
-            existingPageModel.setContent(document.outerHtml());
-            pageRepository.save(existingPageModel);
-            return existingPageModel;
+        PageModel pageModel = isPageRepositoryContainsPageModel(webPageUrl, siteModel);
+        if (pageModel != null) {
+            System.out.println("В PageRepository уже есть модель страницы " + pageModel.getPath());
+            pageModel.setSiteId(siteModel);
+            pageModel.setPath(path);
+            pageModel.setContent(document.outerHtml());
+            pageRepository.save(pageModel);
+            System.out.println("PageModel обновлена");
+            return pageModel;
         } else {
+            System.out.println("В PageRepository нет модели, создана новая PageModel");
             return pageModelUtil.createNewPageModel(webPageUrl, document, siteModel, statusCode);
-//            PageModel pageModel = new PageModel();
-//            newPage.setSiteId(siteTable);
-//            newPage.setCode(response.statusCode());
-//            newPage.setPath(path);
-//            newPage.setContent(content);
-//            pageRepositories.save(newPage);
-//            return newPage;
+        }
+    }
+
+    public void saveNewOrUpdateOldLemma(PageModel pageModel, SiteModel siteModel, Document document) {
+        String textPageForLemmasHtml = document.text();
+        Map<String, Integer> lemmasMap = lemmaFinderUtil.getLemmasMap(textPageForLemmasHtml);
+        Set<String> lemmasSet = lemmasMap.keySet();
+        for (String word : lemmasSet) {
+            LemmaModel existingLemma = lemmaRepository.findByLemma(word);
+            int countLemma = lemmasMap.get(word);
+            if (existingLemma != null) {
+                int count = existingLemma.getFrequency() + countLemma;
+                existingLemma.setFrequency(count);
+                lemmaRepository.save(existingLemma);
+                indexModelUtil.createIndexModel(pageModel, existingLemma, count);
+            } else {
+                LemmaModel newLemmaModel = new LemmaModel();
+                newLemmaModel.setSiteId(siteModel);
+                newLemmaModel.setLemma(word);
+                newLemmaModel.setFrequency(countLemma);
+                lemmaRepository.save(newLemmaModel);
+                indexModelUtil.createIndexModel(pageModel, newLemmaModel, countLemma);
+            }
         }
     }
 }
-
 
 //    public void startIndexSingleSite(Site site) {
 //        SiteModel oldSiteModel = siteRepository.findSiteModelByUrl(site.getUrl());
@@ -243,39 +250,3 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
 //            log.info("Site indexing completed: " + site.getUrl());
 //        }
 //    }
-
-
-//    public void saveNewOrUpdateOldLemma(PageModel pageModel, SiteModel siteModel) throws IOException {
-//        LemmatizationUtils lemmas = new LemmatizationUtils();
-//        String htmlText = document.text();
-//        Map<String, Integer> lemmasMap = lemmas.getLemmaMap(htmlText);
-//
-//        for (String word : lemmasMap.keySet()) {
-//            int countLemma = lemmasMap.get(word);
-//            Optional<Lemma> existingLemmaOpt = lemmaRepositories.findByLemma(word);
-//            if (existingLemmaOpt.isPresent()) {
-//                Lemma existingLemma = existingLemmaOpt.get();
-//                int count = existingLemma.getFrequency() + countLemma;
-//                existingLemma.setFrequency(count);
-//                lemmaRepositories.save(existingLemma);
-//                saveSearchIndex(page, existingLemma, count);
-//            } else {
-//                Lemma newLemma = new Lemma();
-//                newLemma.setSiteId(siteTable);
-//                newLemma.setFrequency(countLemma);
-//                newLemma.setLemma(word);
-//                lemmaRepositories.save(newLemma);
-//                saveSearchIndex(page, newLemma, countLemma);
-//            }
-//        }
-//    }
-
-//
-//    public void saveSearchIndex(Page page,Lemma lemma,int count){
-//        SearchIndex searchIndex = new SearchIndex();
-//        searchIndex.setPageId(page);
-//        searchIndex.setLemmaId(lemma);
-//        searchIndex.setRank(count);
-//        searchIndexRepositories.save(searchIndex);
-//    }
-//

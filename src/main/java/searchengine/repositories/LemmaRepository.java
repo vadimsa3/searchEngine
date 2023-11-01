@@ -9,8 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface LemmaRepository extends CrudRepository<LemmaModel, Integer> {
-    LemmaModel findByLemma(String lemma);
+    LemmaModel findByLemma(String word);
     List<LemmaModel> findAllLemmasBySiteId(SiteModel siteModel);
     LemmaModel findByLemmaAndSiteId(String lemma, SiteModel siteModel);
-    void deleteAllLemmasById(Integer id);
 }

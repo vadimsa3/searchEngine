@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.annotations.Cascade;
 import org.hibernate.proxy.HibernateProxy;
 
 import javax.persistence.*;
@@ -40,6 +41,7 @@ public class SiteModel {
     private String name;
 
     @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE) // связь с page
+    @Cascade(org.hibernate.annotations.CascadeType.ALL)
     private List<PageModel> pageModels;
 
     @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)

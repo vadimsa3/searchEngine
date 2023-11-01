@@ -27,7 +27,7 @@ public class PageModel {
 //    @JoinColumn(foreignKey = @ForeignKey(name = "site_id_key_page"), columnDefinition = "Integer",
 //            referencedColumnName = "id", name = "site_id")
 //    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE})
-    @JoinColumn(name = "site_id")
+    @JoinColumn(name = "site_id", nullable = false)
     private SiteModel siteId;
 
 //    @NaturalId // естественный ключ - в Hibernate если с site_id, то составной естественный ключ для ускорения запросов
