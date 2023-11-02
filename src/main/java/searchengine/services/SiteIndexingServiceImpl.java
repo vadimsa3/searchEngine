@@ -118,17 +118,10 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         if (!listModelsToDelete.isEmpty()) {
             for (SiteModel siteModelToDelete : listModelsToDelete) {
                 System.out.println("Кандидат на удаление из siteRepository - " + siteModelToDelete.getUrl());
-
                 siteRepository.delete(siteModelToDelete);
             }
         }
     }
-//        SiteModel siteModelToDelete = siteRepository.findSiteModelByUrl(urlSite);
-//        if (siteModelToDelete != null) {
-//////            indexRepository.deleteAllIndexById(siteModelToDelete.getId());
-////            lemmaRepository.deleteAllLemmasById(siteModelToDelete.getId());
-////            pageRepository.deleteAllDataById(siteModelToDelete.getId());
-//            siteRepository.delete(siteModelToDelete);
 
     @Override
     public boolean isIndexing() {
@@ -142,11 +135,12 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     }
 
     // !!! НАДО ДОРАБОТАТЬ НЕ ОСТАНАВЛИВАЕТ
+    // НАДО ЧИСТИТЬ СПИСОК ЗАДАЧ, ТОГДА ДОЛЖЕН САМ ОСТАНОВИТСЯ
     @Override
     public boolean stopIndexingSite() {
         if (isIndexing()) {
-            log.info("Indexing stopped by user!");
             forkJoinPool.shutdownNow();
+            log.info("Indexing stopped by user!");
             siteRepository.findAll().forEach(siteModel -> {
                 if (siteModel.getStatusSiteIndex() != StatusSiteIndex.INDEXED) {
                     siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
@@ -193,7 +187,6 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 
 
     // НА УДАЛЕНИЕ ВЕРОЯТНО
-    @Override
     public boolean startIndexSingleSite(Site site) {
         SiteModel oldSiteModel = siteRepository.findSiteModelByUrl(site.getUrl());
         if (oldSiteModel == null) {

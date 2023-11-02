@@ -23,10 +23,9 @@ public class PageModel {
 
 //    @NaturalId // естественный ключ - в Hibernate если с path_page, то составной естественный ключ для ускорения запросов
 
-    @ManyToOne(fetch = FetchType.LAZY, targetEntity = SiteModel.class, cascade = CascadeType.REMOVE, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, targetEntity = SiteModel.class, optional = false)
 //    @JoinColumn(foreignKey = @ForeignKey(name = "site_id_key_page"), columnDefinition = "Integer",
 //            referencedColumnName = "id", name = "site_id")
-//    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE})
     @JoinColumn(name = "site_id", nullable = false)
     private SiteModel siteId;
 

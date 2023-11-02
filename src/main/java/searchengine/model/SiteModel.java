@@ -40,8 +40,7 @@ public class SiteModel {
     @Column(columnDefinition = "VARCHAR(255)", name = "site_name", nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE) // связь с page
-    @Cascade(org.hibernate.annotations.CascadeType.ALL)
+    @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)
     private List<PageModel> pageModels;
 
     @OneToMany(mappedBy = "siteId", cascade = CascadeType.REMOVE)

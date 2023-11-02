@@ -21,11 +21,11 @@ public class IndexModel {
     @Column(nullable = false)
     private int id;
 
-    @ManyToOne(fetch = FetchType.LAZY, targetEntity = PageModel.class, cascade = CascadeType.REMOVE)
+    @ManyToOne(fetch = FetchType.LAZY, targetEntity = PageModel.class)
     @JoinColumn(name = "page_id", nullable = false)
     private PageModel pageId;
 
-    @ManyToOne(fetch = FetchType.LAZY, targetEntity = LemmaModel.class, cascade = CascadeType.REMOVE)
+    @ManyToOne(fetch = FetchType.LAZY, targetEntity = LemmaModel.class)
     @JoinColumn(name = "lemma_id", nullable = false)
     private LemmaModel lemmaId;
 

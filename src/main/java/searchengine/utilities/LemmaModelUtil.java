@@ -37,7 +37,6 @@ public class LemmaModelUtil {
                     lemmaModel.setFrequency(count);
                     lemmaRepository.save(lemmaModel);
                     indexModelUtil.createIndexModel(pageModel, lemmaModel, count);
-                    // saveSearchIndexInSearchIndexRepository(lemmasCountByPage, lemmaForPage, lemmaModel, pageForLemmas);
                 } else {
                     LemmaModel newLemmaModel = new LemmaModel();
                     newLemmaModel.setSiteId(siteModel);
@@ -45,7 +44,6 @@ public class LemmaModelUtil {
                     newLemmaModel.setFrequency(1);
                     lemmaRepository.save(newLemmaModel);
                     indexModelUtil.createIndexModel(pageModel, newLemmaModel, countLemma);
-                // saveSearchIndexInSearchIndexRepository(lemmasCountByPage, lemmaForPage, newLemmaModel, pageForLemmas);
                 }
             }
         }

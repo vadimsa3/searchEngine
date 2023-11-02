@@ -9,11 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
-import searchengine.model.IndexModel;
 import searchengine.model.LemmaModel;
 import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
-import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
@@ -37,8 +35,6 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     @Autowired
     private LemmaRepository lemmaRepository;
     @Autowired
-    private IndexRepository indexRepository;
-    @Autowired
     private PageModelUtil pageModelUtil;
     @Autowired
     private LemmaModelUtil lemmaModelUtil;
@@ -48,8 +44,6 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     private IndexModelUtil indexModelUtil;
     @Autowired
     private SiteModelUtil siteModelUtil;
-    @Autowired
-    private SiteIndexingServiceImpl siteIndexingService;
 
     private static final Logger log = LoggerFactory.getLogger(SiteIndexingServiceImpl.class);
     private String urlSiteFromWebPageUrl;
@@ -203,6 +197,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
             System.out.println("В PageRepository уже есть модель страницы " + pageModel.getPath());
             pageModel.setSiteId(siteModel);
             pageModel.setPath(path);
+            pageModel.setCode(statusCode);
             pageModel.setContent(document.outerHtml());
             pageRepository.save(pageModel);
             System.out.println("PageModel обновлена");
@@ -214,11 +209,12 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     }
 
     public void saveNewOrUpdateOldLemma(PageModel pageModel, SiteModel siteModel, Document document) {
+        System.out.println("-------- Начало работы saveNewOrUpdateOldLemma ------------");
         String textPageForLemmasHtml = document.text();
         Map<String, Integer> lemmasMap = lemmaFinderUtil.getLemmasMap(textPageForLemmasHtml);
         Set<String> lemmasSet = lemmasMap.keySet();
         for (String word : lemmasSet) {
-            LemmaModel existingLemma = lemmaRepository.findByLemma(word);
+            LemmaModel existingLemma = lemmaRepository.findByLemmaAndSiteId(word, siteModel);
             int countLemma = lemmasMap.get(word);
             if (existingLemma != null) {
                 int count = existingLemma.getFrequency() + countLemma;
@@ -236,17 +232,3 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
         }
     }
 }
-
-//    public void startIndexSingleSite(Site site) {
-//        SiteModel oldSiteModel = siteRepository.findSiteModelByUrl(site.getUrl());
-//        if (oldSiteModel != null) {
-//            siteIndexingService.deleteOldDataByUrlSite(site.getUrl());
-//            siteIndexingService.startParsingSite(site.getUrl());  // reindexing
-//        } else {
-//            SiteModel siteModel = siteModelUtil.createNewSiteModel(site);
-//            log.info("Start indexing single site: " + site.getUrl());
-//            siteIndexingService.startParsingSite(site.getUrl());
-//            log.info("Count pages from site " + siteModel.getName() + " - " + siteIndexingService.countPagesBySiteId(siteModel));
-//            log.info("Site indexing completed: " + site.getUrl());
-//        }
-//    }

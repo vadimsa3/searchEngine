@@ -24,7 +24,7 @@ public class LemmaModel {
     private int id;
 
 //    @ManyToOne(fetch = FetchType.LAZY, cascade = {CascadeType.REMOVE})
-    @ManyToOne(fetch = FetchType.LAZY, targetEntity = SiteModel.class, cascade = CascadeType.REMOVE, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, targetEntity = SiteModel.class, optional = false)
     @JoinColumn(name = "site_id", nullable = false)
     private SiteModel siteId;
 
