@@ -69,6 +69,12 @@ public class ParserSiteUtil extends RecursiveAction {
             String link = queueLinks.poll(); // забираем ссылку из очереди
             if (link == null) {
                 status = "waiting";
+
+                // !!! ДОРАБОТАТЬ !!!
+                // если произошла ошибка и обход завершить не удалось, изменять
+                //статус на FAILED и вносить в поле last_error понятную
+                //информацию о произошедшей ошибке.
+
                 siteModelUtil.updateSiteModel(siteModel, StatusSiteIndex.INDEXED, LocalDateTime.now(),
                         lastError.get(siteModel.getId()));
                 return;

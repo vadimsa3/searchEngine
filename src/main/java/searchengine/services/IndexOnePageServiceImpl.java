@@ -37,8 +37,6 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     @Autowired
     private PageModelUtil pageModelUtil;
     @Autowired
-    private LemmaModelUtil lemmaModelUtil;
-    @Autowired
     private LemmaFinderUtil lemmaFinderUtil;
     @Autowired
     private IndexModelUtil indexModelUtil;

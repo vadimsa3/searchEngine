@@ -2,12 +2,14 @@ package searchengine.controllers;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.IndexOnePageService;
+import searchengine.services.SearchService;
 import searchengine.services.SiteIndexingService;
 import searchengine.services.StatisticsService;
 
@@ -36,6 +38,8 @@ public class ApiController {
     private StatisticsService statisticsService;
     @Autowired
     private IndexOnePageService indexOnePageService;
+    @Autowired
+    private SearchService searchService;
 
     /* !!!!!! Контроллер должен только получать данные от пользователя и вызывать нужный сервис.
     Все расчеты и проверки должны быть в классах сервисах. !!!!!!!!
@@ -90,49 +94,36 @@ public class ApiController {
                 ? ResponseEntity.ok().body("{\"result\": true}")
                 : ResponseEntity.badRequest().body("{\"result\": false, \"error\":\"" + errorMessage + "\"}");
     }
+
+    /*Получение данных по поисковому запросу — GET /api/search
+    Метод осуществляет поиск страниц по переданному поисковому запросу (параметр query).
+
+    Параметры:
+    ●	query — поисковый запрос;
+    ●	site — сайт, по которому осуществлять поиск (если не задан, поиск должен происходить по всем проиндексированным
+    сайтам); задаётся в формате адреса, например: http://www.site.com (без слэша в конце);
+    ●	offset — сдвиг от 0 для постраничного вывода (параметр необязательный; если не установлен,
+    то значение по умолчанию равно нулю);
+    ●	limit — количество результатов, которое необходимо вывести (параметр необязательный;
+    если не установлен, то значение по умолчанию равно 20).
+    * */
+
+    @GetMapping("/search")
+    public ResponseEntity<?> search(
+            @RequestParam() String query,
+            @RequestParam(required = false) String site,
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(required = false) Integer limit
+    ) {
+        System.out.println(query); // потом удалить
+        if (query == null || query.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"result\": false, \"error\": \"Задан пустой поисковый запрос\"}");
+        } else {
+            String jsonResult = searchService.performSearch(query, site, offset, limit);
+            System.out.println(jsonResult); // потом удалить
+            return ResponseEntity.status(HttpStatus.OK).body(jsonResult);
+        }
+    }
 }
-//
-//            Map<String, String> response = new HashMap<>();
-//            SitesList sitesList = new SitesList();
-//            for(Site site : sitesList.getSites()){
-//                isIndexing = fjp.invoke(new IndexingService(siteRepositories,site,pageRepositories));
-//            }
-//            if(isIndexing){
-//                response.put("result",isIndexing.toString());
-//                return new ResponseEntity<>(response,HttpStatus.OK);
-//            }else {
-//                response.put("result",isIndexing.toString());
-//                response.put("error","Индексация уже запущена");
-//                return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-//            }
-//        }
-//
-//        task.setDone(true); // статус выполнение задачи
-//        task.setCreationTime(LocalDateTime.now()); // дата внесения задачи
-//        DBSiteRepository.save(site);
-//        return ResponseEntity<>(HttpStatus.CREATED); // статус 201
-//    }
-
-
-
-
-/*Получение данных по поисковому запросу — GET /api/search
-Метод осуществляет поиск страниц по переданному поисковому запросу (параметр query).
-Чтобы выводить результаты порционно, также можно задать параметры offset (сдвиг от начала списка результатов)
-и limit (количество результатов, которое необходимо вывести).
-В ответе выводится общее количество результатов (count), не зависящее от значений параметров offset и limit,
-и массив data с результатами поиска.
-Каждый результат — это объект, содержащий свойства результата поиска (см. ниже структуру и описание каждого свойства).
-Если поисковый запрос не задан или ещё нет готового индекса
-(сайт, по которому ищем, или все сайты сразу не проиндексированы), метод должен вернуть соответствующую ошибку
-(см. ниже пример). Тексты ошибок должны быть понятными и отражать суть ошибок.
-Параметры:
-●	query — поисковый запрос;
-●	site — сайт, по которому осуществлять поиск (если не задан, поиск должен происходить по всем проиндексированным
-сайтам); задаётся в формате адреса, например: http://www.site.com (без слэша в конце);
-●	offset — сдвиг от 0 для постраничного вывода (параметр необязательный; если не установлен,
-то значение по умолчанию равно нулю);
-●	limit — количество результатов, которое необходимо вывести (параметр необязательный;
-если не установлен, то значение по умолчанию равно 20).
-* */
 
