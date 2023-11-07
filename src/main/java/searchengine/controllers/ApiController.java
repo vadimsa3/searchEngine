@@ -1,5 +1,6 @@
 package searchengine.controllers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -114,7 +115,7 @@ public class ApiController {
             @RequestParam(required = false) String site,
             @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer limit
-    ) {
+    ) throws IOException {
         System.out.println(query); // потом удалить
         if (query == null || query.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

@@ -56,6 +56,13 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     private Boolean isThreadsRunning = null;
     private final ForkJoinPool forkJoinPool = new ForkJoinPool();
 
+    // !!! ПРОВЕТИТЬ:
+    // В ТАБЛИЦУ ЛЕММ ПОПАДАЮТЛЕММЫ НЕ ВСЕХ САЙТОЫ,
+    // В ИНДЕКСЫ НЕ ВСЕ СТРАНИЦЫ
+    // ПРИ ЧЕТЫРЕХ САЙТАХ ПУТАЮТСЯ id В ТАБЛИЦЕ СТРАНИЦ (СТАВЯТСЯ НЕ ТЕ) И
+    // ЛЕММЫ ДАЛЬШЕ НЕ ИДУТ ПОСЛЕ ДВУХ САЙТОВ
+    // В ТАБЛИЦУ САЙТ ВНОСЯТСЯ НЕВЕРНЫЕ ДАННЫЕ ПО ИНДЕКСАЦИИ И ПРОВЕРИТЬ ОШИБКИ
+
     public boolean startIndexingSite() {
         isThreadsRunning = true;
 //        log.info("BEGIN" + isThreadsRunning);
@@ -111,7 +118,6 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     public Integer countPagesBySiteId(SiteModel siteModel) {
         return (pageRepository.findAllPagesBySiteId(siteModel).size());
     }
-
     public void deleteOldDataByUrlSite(String urlSite) {
         List<SiteModel> listModelsToDelete = siteRepository.findSiteModelsByUrl(urlSite);
         System.out.println("В репозитории находятся SiteModel с указанным URL - " + listModelsToDelete.size());

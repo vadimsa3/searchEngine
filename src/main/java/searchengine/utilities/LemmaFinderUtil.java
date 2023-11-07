@@ -12,7 +12,7 @@ import java.util.*;
 @Service
 public class LemmaFinderUtil {
 
-    private final LuceneMorphology luceneMorphology;
+    public LuceneMorphology luceneMorphology;
     private static final String WORD_TYPE_REGEX = "\\W\\w&&[^а-яА-Я\\s]";
     private static final String[] particlesNames = new String[]{"МЕЖД", "ПРЕДЛ", "СОЮЗ", "ВВОДН", "ЧАСТ", "МС"};
 
@@ -22,7 +22,6 @@ public class LemmaFinderUtil {
     }
     /**
      * Метод разделяет текст на слова, находит все леммы и считает их количество.
-     *
      * @param text текст из которого будут выбираться леммы
      * @return ключ является леммой, а значение количеством найденных лемм
      */
@@ -51,10 +50,6 @@ public class LemmaFinderUtil {
         return lemmas;
     }
 
-    /**
-     * @param text текст из которого собираем все леммы
-     * @return набор уникальных лемм найденных в тексте
-     */
     public Set<String> getUniqLemmasSet(String text) {
         String[] textArray = arrayContainsRussianWords(text);
         Set<String> lemmaSet = new HashSet<>();
@@ -70,7 +65,7 @@ public class LemmaFinderUtil {
         return lemmaSet;
     }
 
-    private boolean anyWordBaseBelongToParticle(List<String> wordBaseForms) {
+    public boolean anyWordBaseBelongToParticle(List<String> wordBaseForms) {
         return wordBaseForms.stream().anyMatch(this::hasParticleProperty);
     }
 

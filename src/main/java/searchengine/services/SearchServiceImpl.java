@@ -1,22 +1,42 @@
 package searchengine.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import searchengine.dto.search.PageData;
+import searchengine.dto.search.SearchResult;
+import searchengine.model.IndexModel;
+import searchengine.model.LemmaModel;
+import searchengine.model.SiteModel;
+import searchengine.repositories.IndexRepository;
+import searchengine.repositories.LemmaRepository;
+import searchengine.repositories.SiteRepository;
+import searchengine.utilities.LemmaFinderUtil;
+import searchengine.utilities.WordFinderUtil;
+
+import java.io.IOException;
+import java.util.*;
 
 
         /*Метод осуществляет поиск страниц по переданному поисковому запросу (параметр query).
-        Чтобы выводить результаты порционно, также можно задать параметры offset (сдвиг от начала списка результатов)
+        Чтобы выводить результаты порционно, также можно задать параметры
+        offset (сдвиг от начала списка результатов)
         и limit (количество результатов, которое необходимо вывести).
         В ответе выводится общее количество результатов (count), не зависящее от значений параметров offset и limit,
         и массив data с результатами поиска.
-        Каждый результат — это объект, содержащий свойства результата поиска (см. ниже структуру и описание каждого свойства).
+        Каждый результат — это объект, содержащий свойства результата поиска
+        (см. ниже структуру и описание каждого свойства).
         Если поисковый запрос не задан или ещё нет готового индекса
-        (сайт, по которому ищем, или все сайты сразу не проиндексированы), метод должен вернуть соответствующую ошибку
+        (сайт, по которому ищем, или все сайты сразу не проиндексированы),
+        метод должен вернуть соответствующую ошибку
         (см. ниже пример). Тексты ошибок должны быть понятными и отражать суть ошибок.*/
 
         /*Метод должен выполнять следующий алгоритм:
         Разбивать поисковый запрос на отдельные слова и формировать
         из этих слов список уникальных лемм, исключая междометия,
-        союзы, предлоги и частицы. Используйте для этого код, который
+        союзы, предлоги и частицы.
+        Используйте для этого код, который
         вы уже писали в предыдущем этапе.
         ● Исключать из полученного списка леммы, которые встречаются на
         слишком большом количестве страниц. Поэкспериментируйте и
@@ -42,89 +62,140 @@ import org.springframework.stereotype.Service;
 @Service
 public class SearchServiceImpl implements SearchService {
 
-    private final SearchResult searchResult;
     @Autowired
-    SearchIndexRepositories searchIndexRepositories;
+    SiteRepository siteRepository;
     @Autowired
-    LemmaRepositories lemmaRepositories;
+    LemmaRepository lemmaRepository;
     @Autowired
-    SiteRepositories siteRepositories;
+    IndexRepository indexRepository;
+
+    // offset (сдвиг от начала списка результатов)
     private Integer offset;
-    private Integer limit;
-    private final LemmatizationUtils lemmatizationUtils;
-    private final FindWordInText findWordInText;
+
+    // limit (количество результатов, которое необходимо вывести)
+    private Integer limitOutputResults;
+
+    private final LemmaFinderUtil lemmaFinderUtil;
+
+    private final SearchResult searchResult;
+
+    private final WordFinderUtil wordFinderUtil;
 
 
-    public SearchService() throws IOException {
+//    public SearchService() throws IOException {
+//        searchResult = new SearchResult();
+//        lemmaFinderUtil = new LemmatizationUtils();
+//        wordFinderUtil = new FindWordInText();
+//    }
+
+    public SearchServiceImpl() throws IOException {
+        lemmaFinderUtil = new LemmaFinderUtil();
+        wordFinderUtil = new WordFinderUtil();
         searchResult = new SearchResult();
-        lemmatizationUtils = new LemmatizationUtils();
-        findWordInText = new FindWordInText();
     }
+//    public SearchServiceImpl(LemmaFinderUtil lemmaFinderUtil,
+//                             WordFinderUtil wordFinderUtil,
+//                             SearchResult searchResult) {
+//        this.lemmaFinderUtil = lemmaFinderUtil;
+//        this.wordFinderUtil = wordFinderUtil;
+//        this.searchResult = searchResult;
+//    }
 
     @Override
-    public String performSearch(String query, String site, Integer offset, Integer limit) throws IOException {
+    public String performSearch(String query, String siteFromQuery, Integer offset, Integer limit) throws IOException {
+        System.out.println("!!! НАЧАЛО ПОИСКА performSearch !!!"); // удалить
         this.offset = offset;
-        this.limit = limit;
-        List<SearchIndex> matchingSearchIndexes = new ArrayList<>();
-        Set<SearchIndex> tempMatchingIndexes = new HashSet<>();
-        Map<String, Integer> lemmas = lemmatizationUtils.getLemmaMap(query);
-        Map<String, Integer> sortedLemmasByFrequency = lemmas.entrySet()
+        this.limitOutputResults = limit;
+        List<IndexModel> matchingSearchIndexes = new ArrayList<>();
+        Set<IndexModel> tempMatchingIndexes = new HashSet<>();
+        /*Разбиваем поисковый запрос на отдельные слова
+        и формируем из этих слов список уникальных лемм,
+        исключая междометия, союзы, предлоги и частицы.
+        + добавим их количество*/
+        Map<String, Integer> uniqueLemmas = lemmaFinderUtil.getLemmasMap(query);
+        System.out.println("СПИСОК ЛЕММ ИЗ ПОИСКОВОГО ЗАПРОСА С КОЛИЧЕСТВОМ :"
+                + uniqueLemmas); // удалить
+
+        /*Сортировать леммы в порядке увеличения частоты встречаемости
+        (по возрастанию значения поля frequency) — от самых редких до самых частых./*/
+        Map<String, Integer> sortedLemmasByFrequency = uniqueLemmas.entrySet()
                 .stream()
                 .sorted(Map.Entry.comparingByValue())
-                .collect(LinkedHashMap::new, (map, entry) -> map.put(entry.getKey(), entry.getValue()), LinkedHashMap::putAll);
-        for (String word : sortedLemmasByFrequency.keySet()) {
-            Optional<Lemma> lemmaRep;
-            if (site == null) {
-                lemmaRep = lemmaRepositories.findByLemma(word);
+                .collect(LinkedHashMap::new, (map, entry) ->
+                        map.put(entry.getKey(), entry.getValue()), LinkedHashMap::putAll);
+        System.out.println("ОТСОРТИРОВАННЫЕ ЛЕММЫ ПО ВОЗРАСТАНИЮ ИЗ ЗАПРОСА ДЛЯ ПОИСКА "
+                + sortedLemmasByFrequency); // удалить
+        /*По первой, самой редкой лемме из списка, находить все страницы, на которых она встречается.
+        Искать соответствия следующей леммы из этого списка страниц. 
+        Повторять операцию по каждой следующей лемме. 
+        Список страниц при этом на каждой итерации должен уменьшаться.*/
+        for (String lemmaFromSortedListQuery : sortedLemmasByFrequency.keySet()) {
+            LemmaModel lemmaModelFromRepository;
+            // если сайт для поиска не задан,
+            // поиск должен происходить по всем проиндексированным сайтам
+            // ищем леммы из всего репозитория
+            if (siteFromQuery == null) {
+                lemmaModelFromRepository = lemmaRepository.findByLemma(lemmaFromSortedListQuery);
             } else {
-                SiteTable siteTable = siteRepositories.findByUrl(site);
-                lemmaRep = lemmaRepositories.findByLemmaAndSiteId(word, siteTable);
+                SiteModel siteModel = siteRepository.findSiteModelByUrl(siteFromQuery);
+                lemmaModelFromRepository = lemmaRepository.findByLemmaAndSiteId(lemmaFromSortedListQuery, siteModel);
             }
-            if (lemmaRep.isPresent()) {
-                Lemma lemma = lemmaRep.get();
-                tempMatchingIndexes.addAll(searchIndexRepositories.findByLemmaId(lemma));
+            // если находим лемму
+            // ищем по репозиторию индексов страницы, соответствующие лемме
+            // сохраняем перечень моделей индексов в set
+            if (lemmaModelFromRepository != null) {
+                tempMatchingIndexes.addAll(indexRepository.findByLemmaId(lemmaModelFromRepository));
             }
         }
         if (!tempMatchingIndexes.isEmpty()) {
             matchingSearchIndexes.addAll(tempMatchingIndexes);
         }
+        /*Если страницы найдены, рассчитывать по каждой из них релевантность.*/
+        Map<Integer, Double> relevancePage = calculateMaxPageRelevance(matchingSearchIndexes);
+        /*Список объектов страниц с учетом полученных данных.*/
+        List<PageData> pageDataList = setPageData(matchingSearchIndexes,
+                sortedLemmasByFrequency, relevancePage);
+        /*Сортировать страницы по убыванию релевантности (от большей к меньшей)*/
+        Collections.sort(pageDataList, (pageData1, pageData2) ->
+                Double.compare(pageData2.getRelevance(), pageData1.getRelevance()));
 
-        Map<Integer, Double> relevance = calculateMaxRelevance(matchingSearchIndexes);
-        List<PageData> pdList = setPageData(matchingSearchIndexes,
-                sortedLemmasByFrequency, relevance);
-        Collections.sort(pdList, (pd1, pd2) -> Double.compare(pd2.getRelevance(), pd1.getRelevance()));
-        setSearchResult(pdList, matchingSearchIndexes.size());
+        setSearchResult(pageDataList, matchingSearchIndexes.size());
+
         ObjectMapper objectMapper = new ObjectMapper();
-        searchResult.getData().forEach(d -> System.out.println(d.getSnippet()));
+        // потом удалить
+        searchResult.getData().forEach(data ->
+                System.out.println(data.getSnippet()));
         String jsonResult = objectMapper.writeValueAsString(searchResult);
         return jsonResult;
     }
 
-
-    private void setSearchResult(List<PageData> pdList, int count) {
-        searchResult.setData(pdList);
+    private void setSearchResult(List<PageData> pageDataList, int count) {
+        searchResult.setData(pageDataList);
         searchResult.setCount(count);
         searchResult.setResult(true);
     }
 
-    private List<PageData> setPageData(List<SearchIndex> matchingSearchIndexList,
+    private List<PageData> setPageData(List<IndexModel> matchingSearchIndexList,
                                        Map<String, Integer> sortedLemmasByFrequency,
-                                       Map<Integer, Double> relevance) {
+                                       Map<Integer, Double> relevance) throws IOException {
         List<PageData> pageDataResult = new ArrayList<>();
         double maxRelevance = Collections.max(relevance.values());
         int startOffset = Math.max(offset != null ? offset : 0, 0);
-        int endOffset = Math.min(startOffset + (limit != null && limit > 0 ? limit : 20), matchingSearchIndexList.size());
-        Set<Integer> uniqPageId = new HashSet<>();
+        int endOffset = Math.min(startOffset + (limitOutputResults != null &&
+                limitOutputResults > 0 ? limitOutputResults : 20), matchingSearchIndexList.size());
+        Set<Integer> uniquePageId = new HashSet<>();
         for (int i = startOffset; i < endOffset; i++) {
             int newPageId = matchingSearchIndexList.get(i).getPageId().getId();
-            if (uniqPageId.add(newPageId)) {
+            if (uniquePageId.add(newPageId)) {
                 String siteName = matchingSearchIndexList.get(i).getPageId().getSiteId().getName();
                 String url = matchingSearchIndexList.get(i).getPageId().getPath();
                 String site = matchingSearchIndexList.get(i).getPageId().getSiteId().getUrl();
                 String fullText = matchingSearchIndexList.get(i).getPageId().getContent();
                 List<String> lemmas = new ArrayList<>(sortedLemmasByFrequency.keySet());
-                String snippet = findWordInText.getMatchingSnippet(fullText, lemmas);
-                String title = findWordInText.getTitle(fullText);
+
+                String snippet = wordFinderUtil.getMatchingSnippet(fullText, lemmas);
+                String title = wordFinderUtil.getTitle(fullText);
+
                 PageData pageData = new PageData();
                 double absolutRelevance = relevance.getOrDefault(newPageId, 0.0);
                 pageData.setSiteName(siteName);
@@ -139,12 +210,11 @@ public class SearchServiceImpl implements SearchService {
         return pageDataResult;
     }
 
-
-    private Map<Integer, Double> calculateMaxRelevance(List<SearchIndex> matchingSearchIndexes) {
+    private Map<Integer, Double> calculateMaxPageRelevance(List<IndexModel> matchingSearchIndexes) {
         Map<Integer, Double> pageRelevenceMap = new HashMap<>();
-        for (SearchIndex si : matchingSearchIndexes) {
-            double relevance = si.getRank();
-            int pageId = si.getPageId().getId();
+        for (IndexModel indexModel : matchingSearchIndexes) {
+            double relevance = indexModel.getRank();
+            int pageId = indexModel.getPageId().getId();
             if (pageRelevenceMap.containsKey(pageId)) {
                 double currentPageRelevance = pageRelevenceMap.get(pageId);
                 double newPageRelevance = currentPageRelevance + relevance;
@@ -155,5 +225,4 @@ public class SearchServiceImpl implements SearchService {
         }
         return pageRelevenceMap;
     }
-
 }
