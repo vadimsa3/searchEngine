@@ -1,6 +1,5 @@
 package searchengine.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -81,28 +80,14 @@ public class SearchServiceImpl implements SearchService {
 
     private final WordFinderUtil wordFinderUtil;
 
-
-//    public SearchService() throws IOException {
-//        searchResult = new SearchResult();
-//        lemmaFinderUtil = new LemmatizationUtils();
-//        wordFinderUtil = new FindWordInText();
-//    }
-
     public SearchServiceImpl() throws IOException {
         lemmaFinderUtil = new LemmaFinderUtil();
         wordFinderUtil = new WordFinderUtil();
         searchResult = new SearchResult();
     }
-//    public SearchServiceImpl(LemmaFinderUtil lemmaFinderUtil,
-//                             WordFinderUtil wordFinderUtil,
-//                             SearchResult searchResult) {
-//        this.lemmaFinderUtil = lemmaFinderUtil;
-//        this.wordFinderUtil = wordFinderUtil;
-//        this.searchResult = searchResult;
-//    }
 
     @Override
-    public String performSearch(String query, String siteFromQuery, Integer offset, Integer limit) throws IOException {
+    public String beginSearch(String query, String siteFromQuery, Integer offset, Integer limit) throws IOException {
         System.out.println("!!! НАЧАЛО ПОИСКА performSearch !!!"); // удалить
         this.offset = offset;
         this.limitOutputResults = limit;
@@ -130,43 +115,50 @@ public class SearchServiceImpl implements SearchService {
         Повторять операцию по каждой следующей лемме. 
         Список страниц при этом на каждой итерации должен уменьшаться.*/
         for (String lemmaFromSortedListQuery : sortedLemmasByFrequency.keySet()) {
-            LemmaModel lemmaModelFromRepository;
+            List<LemmaModel> listLemmaModelsFromRepository = new ArrayList<>();
             // если сайт для поиска не задан,
             // поиск должен происходить по всем проиндексированным сайтам
             // ищем леммы из всего репозитория
             if (siteFromQuery == null) {
-                lemmaModelFromRepository = lemmaRepository.findByLemma(lemmaFromSortedListQuery);
+                listLemmaModelsFromRepository = lemmaRepository.findAllByLemma(lemmaFromSortedListQuery);
             } else {
                 SiteModel siteModel = siteRepository.findSiteModelByUrl(siteFromQuery);
-                lemmaModelFromRepository = lemmaRepository.findByLemmaAndSiteId(lemmaFromSortedListQuery, siteModel);
+                LemmaModel lemmaModelFromRepository = lemmaRepository.findByLemmaAndSiteId(lemmaFromSortedListQuery, siteModel);
+                listLemmaModelsFromRepository.add(lemmaModelFromRepository);
             }
+
+            System.out.println("++++ НАШЛИ ЛЕММЫ " + listLemmaModelsFromRepository.size()); // удалить
+
             // если находим лемму
             // ищем по репозиторию индексов страницы, соответствующие лемме
             // сохраняем перечень моделей индексов в set
-            if (lemmaModelFromRepository != null) {
-                tempMatchingIndexes.addAll(indexRepository.findByLemmaId(lemmaModelFromRepository));
+            if (!listLemmaModelsFromRepository.isEmpty()) {
+                listLemmaModelsFromRepository.forEach(lemma -> {
+                    tempMatchingIndexes.addAll(indexRepository.findByLemmaId(lemma));
+                });
             }
         }
         if (!tempMatchingIndexes.isEmpty()) {
             matchingSearchIndexes.addAll(tempMatchingIndexes);
         }
+
         /*Если страницы найдены, рассчитывать по каждой из них релевантность.*/
         Map<Integer, Double> relevancePage = calculateMaxPageRelevance(matchingSearchIndexes);
         /*Список объектов страниц с учетом полученных данных.*/
         List<PageData> pageDataList = setPageData(matchingSearchIndexes,
                 sortedLemmasByFrequency, relevancePage);
         /*Сортировать страницы по убыванию релевантности (от большей к меньшей)*/
-        Collections.sort(pageDataList, (pageData1, pageData2) ->
+        pageDataList.sort((pageData1, pageData2) ->
                 Double.compare(pageData2.getRelevance(), pageData1.getRelevance()));
 
         setSearchResult(pageDataList, matchingSearchIndexes.size());
 
         ObjectMapper objectMapper = new ObjectMapper();
+
         // потом удалить
         searchResult.getData().forEach(data ->
                 System.out.println(data.getSnippet()));
-        String jsonResult = objectMapper.writeValueAsString(searchResult);
-        return jsonResult;
+        return objectMapper.writeValueAsString(searchResult);
     }
 
     private void setSearchResult(List<PageData> pageDataList, int count) {
@@ -181,6 +173,8 @@ public class SearchServiceImpl implements SearchService {
         List<PageData> pageDataResult = new ArrayList<>();
         double maxRelevance = Collections.max(relevance.values());
         int startOffset = Math.max(offset != null ? offset : 0, 0);
+        // limit — количество результатов, которое необходимо вывести (параметр необязательный;
+        // если не установлен, то значение по умолчанию равно 20).
         int endOffset = Math.min(startOffset + (limitOutputResults != null &&
                 limitOutputResults > 0 ? limitOutputResults : 20), matchingSearchIndexList.size());
         Set<Integer> uniquePageId = new HashSet<>();
@@ -190,11 +184,12 @@ public class SearchServiceImpl implements SearchService {
                 String siteName = matchingSearchIndexList.get(i).getPageId().getSiteId().getName();
                 String url = matchingSearchIndexList.get(i).getPageId().getPath();
                 String site = matchingSearchIndexList.get(i).getPageId().getSiteId().getUrl();
-                String fullText = matchingSearchIndexList.get(i).getPageId().getContent();
+                String fullContentPage = matchingSearchIndexList.get(i).getPageId().getContent();
+                System.out.println("+++++++++++++ ПРОВЕРКА FULL TEXT PAGE " + fullContentPage);
                 List<String> lemmas = new ArrayList<>(sortedLemmasByFrequency.keySet());
-
-                String snippet = wordFinderUtil.getMatchingSnippet(fullText, lemmas);
-                String title = wordFinderUtil.getTitle(fullText);
+                System.out.println("+++++++++++++ ПРОВЕРКА LEMMAS " + lemmas);
+                String snippet = wordFinderUtil.getSnippet(fullContentPage, lemmas);
+                String title = wordFinderUtil.getTitleFromFullContentPage(fullContentPage);
 
                 PageData pageData = new PageData();
                 double absolutRelevance = relevance.getOrDefault(newPageId, 0.0);

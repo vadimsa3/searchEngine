@@ -1,6 +1,5 @@
 package searchengine.controllers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -121,7 +120,7 @@ public class ApiController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("{\"result\": false, \"error\": \"Задан пустой поисковый запрос\"}");
         } else {
-            String jsonResult = searchService.performSearch(query, site, offset, limit);
+            String jsonResult = searchService.beginSearch(query, site, offset, limit);
             System.out.println(jsonResult); // потом удалить
             return ResponseEntity.status(HttpStatus.OK).body(jsonResult);
         }

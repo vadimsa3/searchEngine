@@ -1,7 +1,6 @@
 package searchengine.utilities;
 
 import org.jsoup.Jsoup;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -20,10 +19,12 @@ public class WordFinderUtil {
     }
 
     // !!!!!ПРОВЕРИТЬ ГЛЮК СО СНИППЕТАМИ !!!!
-        public String getMatchingSnippet(String fullText, List<String> lemmas) throws IOException {
-        String text = clearTagOnHtml(fullText);
-        System.out.println(lemmas);
-        String newText = text.toLowerCase(Locale.ROOT).replaceAll("([^а-я\\s])", "").trim();
+        public String getSnippet(String fullContentPage, List<String> lemmas) throws IOException {
+        String onlyTextPage = getTextFromFullContentPage(fullContentPage);
+        System.out.println("+++++++++++++ ПРОВЕРКА onlyTextPage в getSnippet " + onlyTextPage);
+        System.out.println("+++++++++++++ ПРОВЕРКА LEMMAS В getSnippet " + lemmas);
+        String newText = onlyTextPage.toLowerCase(Locale.ROOT).replaceAll("([^а-я\\s])", "").trim();
+        System.out.println("+++++++++++++ ПРОВЕРКА newText в getSnippet " + newText);
         String[] words = newText.split("\\s");
 
         List<Integer> indexInText = new ArrayList<>();
@@ -31,7 +32,7 @@ public class WordFinderUtil {
             String word = words[i];
             for (String lemma : lemmas) {
                 if (isLemmaInText(lemma, word)) {
-                    indexInText.add(text.toLowerCase().indexOf(word));
+                    indexInText.add(onlyTextPage.toLowerCase().indexOf(word));
                 }
             }
         }
@@ -45,14 +46,14 @@ public class WordFinderUtil {
         for (int i = 0; i < indexInText.size(); i++) {
             int startIndex = indexInText.get(i);
             int endIndex = startIndex + 150;
-            int nextSpaceIndex = text.indexOf(" ", endIndex);
+            int nextSpaceIndex = onlyTextPage.indexOf(" ", endIndex);
             if (nextSpaceIndex != -1) {
                 endIndex = nextSpaceIndex;
             }
 
             int currentLemmas = 0;
             for (String lemma : lemmas) {
-                if (text.toLowerCase().substring(startIndex, endIndex).contains(lemma)) {
+                if (onlyTextPage.toLowerCase().substring(startIndex, endIndex).contains(lemma)) {
                     currentLemmas++;
                 }
             }
@@ -63,17 +64,15 @@ public class WordFinderUtil {
             }
         }
 
-        return text.substring(bestStartIndex, bestEndIndex);
+        return onlyTextPage.substring(bestStartIndex, bestEndIndex);
     }
 
-    public String getTitle(String html) {
-        org.jsoup.nodes.Document document = Jsoup.parse(html);
-        return document.title();
+    public String getTitleFromFullContentPage(String html) {
+        return Jsoup.parse(html).title();
     }
 
-    private String clearTagOnHtml(String html) {
-        org.jsoup.nodes.Document document = Jsoup.parse(html);
-        return document.title();
+    private String getTextFromFullContentPage(String html) {
+        return Jsoup.parse(html).text();
     }
 
     public boolean isLemmaInText(String lemma, String word) {
@@ -91,14 +90,14 @@ public class WordFinderUtil {
         return normalForms.get(0).equals(lemma);
     }
 
-    // на всякий случай
+    // !!! РЕАЛИЗОВАТЬ - проверка на язык ввода слова
     private String checkEnterWordLanguage(String word) {
         String russianAlphabet = "[а-яА-Я]+";
         String englishAlphabet = "[a-zA-z]+";
         if (word.matches(russianAlphabet)) {
             return "Russian";
         } else if (word.matches(englishAlphabet)) {
-            return "Enter a word in Russian";
+            return "Please enter a word in Russian language";
         } else {
             return "";
         }
