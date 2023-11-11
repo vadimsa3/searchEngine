@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 
 import lombok.Getter;
 import org.slf4j.Logger;
@@ -143,13 +144,16 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     // !!! НАДО ДОРАБОТАТЬ НЕ ОСТАНАВЛИВАЕТ
     // НАДО ЧИСТИТЬ СПИСОК ЗАДАЧ, ТОГДА ДОЛЖЕН САМ ОСТАНОВИТСЯ
     // должна останавливать все потоки и записывать в базу данных для всех сайтов,
-    //страницы которых ещё не удалось обойти, состояние FAILED и текст
-    //ошибки «Индексация остановлена пользователем».
+    // страницы которых ещё не удалось обойти, состояние FAILED и текст
+    // ошибки «Индексация остановлена пользователем».
 
     @Override
     public boolean stopIndexingSite() {
         if (isIndexing()) {
             forkJoinPool.shutdownNow();
+
+            queueLinks.clear();        // !!!! ПРОВЕРИТЬ !!!!
+
             log.info("Indexing stopped by user!");
             siteRepository.findAll().forEach(siteModel -> {
                 if (siteModel.getStatusSiteIndex() != StatusSiteIndex.INDEXED) {

@@ -1,5 +1,6 @@
 package searchengine.utilities;
 
+import org.apache.lucene.document.Document;
 import org.jsoup.Jsoup;
 import org.springframework.stereotype.Service;
 
@@ -18,31 +19,37 @@ public class WordFinderUtil {
         lemmaFinderUtil = new LemmaFinderUtil();
     }
 
+/*    Сниппеты — фрагменты текстов, в которых найдены совпадения, для
+    всех страниц должны быть примерно одинаковой длины — такие, чтобы
+    на странице с результатами поиска они занимали примерно три строки.
+    В них необходимо выделять жирным совпадения с исходным поисковым
+    запросом.
+    Выделение должно происходить в формате HTML при помощи
+    тега <b>.
+    Алгоритм получения сниппета из веб-страницы реализуйте
+    самостоятельно.*/
+
     // !!!!!ПРОВЕРИТЬ ГЛЮК СО СНИППЕТАМИ !!!!
         public String getSnippet(String fullContentPage, List<String> lemmas) throws IOException {
         String onlyTextPage = getTextFromFullContentPage(fullContentPage);
-        System.out.println("+++++++++++++ ПРОВЕРКА onlyTextPage в getSnippet " + onlyTextPage);
-        System.out.println("+++++++++++++ ПРОВЕРКА LEMMAS В getSnippet " + lemmas);
-        String newText = onlyTextPage.toLowerCase(Locale.ROOT).replaceAll("([^а-я\\s])", "").trim();
-        System.out.println("+++++++++++++ ПРОВЕРКА newText в getSnippet " + newText);
-        String[] words = newText.split("\\s");
-
+        System.out.println("+++++++++++++ ПРОВЕРКА onlyTextPage в getSnippet " + onlyTextPage); // удалить
+        System.out.println("+++++++++++++ ПРОВЕРКА LEMMAS В getSnippet " + lemmas); // удалить
+        String newEditText = onlyTextPage.toLowerCase(Locale.ROOT).replaceAll("([^а-я\\s])", "").trim();
+        System.out.println("+++++++++++++ ПРОВЕРКА newText в getSnippet " + newEditText); // удалить
+        String[] words = newEditText.split("\\s");
         List<Integer> indexInText = new ArrayList<>();
-        for (int i = 0; i < words.length; i++) {
-            String word = words[i];
-            for (String lemma : lemmas) {
-                if (isLemmaInText(lemma, word)) {
-                    indexInText.add(onlyTextPage.toLowerCase().indexOf(word));
+            for (String word : words) {
+                for (String lemma : lemmas) {
+                    if (isLemmaInText(lemma, word)) {
+                        indexInText.add(onlyTextPage.toLowerCase().indexOf(word));
+                    }
                 }
             }
-        }
 
         Collections.sort(indexInText);
-
         int bestStartIndex = 0;
         int bestEndIndex = 0;
         int maxLemmas = 0;
-
         for (int i = 0; i < indexInText.size(); i++) {
             int startIndex = indexInText.get(i);
             int endIndex = startIndex + 150;
@@ -63,7 +70,6 @@ public class WordFinderUtil {
                 bestEndIndex = endIndex;
             }
         }
-
         return onlyTextPage.substring(bestStartIndex, bestEndIndex);
     }
 

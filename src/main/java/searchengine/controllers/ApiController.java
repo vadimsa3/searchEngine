@@ -112,8 +112,8 @@ public class ApiController {
     public ResponseEntity<?> search(
             @RequestParam() String query,
             @RequestParam(required = false) String site,
-            @RequestParam(required = false) Integer offset,
-            @RequestParam(required = false) Integer limit
+            @RequestParam(required = false, defaultValue = "0") Integer offset,
+            @RequestParam(required = false, defaultValue = "20") Integer limit
     ) throws IOException {
         System.out.println(query); // потом удалить
         if (query == null || query.isEmpty()) {
