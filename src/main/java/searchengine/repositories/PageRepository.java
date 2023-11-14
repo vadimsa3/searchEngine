@@ -17,4 +17,5 @@ public interface PageRepository extends CrudRepository<PageModel, Integer> {
     void deleteAllDataById(Integer id);
     void deletePageModelByPath(String path);
     List<PageModel> findAllPagesBySiteId(SiteModel siteModel);
+    List<PageModel> findAll();
 }

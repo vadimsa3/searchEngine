@@ -11,6 +11,7 @@ import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
 import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
+import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.utilities.LemmaFinderUtil;
 import searchengine.utilities.WordFinderUtil;
@@ -44,8 +45,9 @@ import java.util.stream.Collectors;
         ● 4. По первой, самой редкой лемме из списка, находить все страницы, на которых она встречается.
         Далее искать соответствия следующей леммы из этого списка страниц, а затем повторять операцию
         по каждой следующей лемме. Список страниц при этом на каждой итерации должен уменьшаться.
-        ● Если в итоге не осталось ни одной страницы, то выводить пустой
-        список.
+
+        ● Если в итоге не осталось ни одной страницы, то выводить пустой список.
+
         ● Если страницы найдены, рассчитывать по каждой из них
         релевантность (и выводить её потом, см. ниже) и возвращать.
         ● Для каждой страницы рассчитывать абсолютную релевантность —
@@ -63,6 +65,8 @@ public class SearchServiceImpl implements SearchService {
     LemmaRepository lemmaRepository;
     @Autowired
     IndexRepository indexRepository;
+    @Autowired
+    PageRepository pageRepository;
 
     // offset (сдвиг от начала списка результатов)
     private Integer offset;
@@ -71,6 +75,7 @@ public class SearchServiceImpl implements SearchService {
     private final LemmaFinderUtil lemmaFinderUtil;
     private final SearchResult searchResult;
     private final WordFinderUtil wordFinderUtil;
+    Map<Integer, Integer> listLemmasAndCountPages = new HashMap<>();
 
     public SearchServiceImpl() throws IOException {
         lemmaFinderUtil = new LemmaFinderUtil();
@@ -94,36 +99,28 @@ public class SearchServiceImpl implements SearchService {
         /* 1.1. По леммам из запроса и сайту, находим все модели-лемм из репозитория*/
         List<LemmaModel> listLemmaModelsFromRepository = getListLemmaModelsByLemmaFromQuery(uniqueLemmasFromQuery,
                 siteFromQuery);
-        Map<String, Integer> listLemmas = getLemma(listLemmaModelsFromRepository);
 
         /* 1.2. По найденным моделям-леммам, находим все страницы, на которых она встречается.*/
-        Map<String, List<PageModel>> listLemmasAndPages = getPagesByLemmaModel(listLemmaModelsFromRepository);
-
         /* 2. Исключать из полученного списка леммы, которые встречаются на слишком большом количестве страниц.
         Поэкспериментируйте и определите этот процент самостоятельно.*/
+        Map<Integer, List<PageModel>> mapLemmasAndPages = getPagesByLemmaModel(listLemmaModelsFromRepository);
 
+        /* 3. Сортировать леммы в порядке увеличения частоты встречаемости на страницах (от самых редких до самых частых).
+        /*4. По первой, самой редкой лемме из списка, находить все страницы, на которых она встречается и т.д..*/
+        Map<Integer, List<PageModel>> sortedMapLemmasByFrequencyOnPages = getSortedLemmasByFrequencyOnPages(mapLemmasAndPages);
 
+        /* Далее искать соответствия следующей леммы из этого списка страниц, а затем повторять операцию
+        по каждой следующей лемме. Список страниц при этом на каждой итерации должен уменьшаться.
+        ● Если в итоге не осталось ни одной страницы, то выводить пустой список.*/
 
-        /* 3.Сортировать леммы в порядке увеличения частоты встречаемости
-        (по возрастанию значения поля frequency) — от самых редких до самых частых./*/
-        Map<String, Integer> sortedLemmasByFrequency = getSortedLemmasByFrequency(uniqueLemmasFromQuery);
-
-        /*По первой, самой редкой лемме из списка, находить все страницы, на которых она встречается.
-        Искать соответствия следующей леммы из этого списка страниц. 
-        Повторять операцию по каждой следующей лемме. 
-        Список страниц при этом на каждой итерации должен уменьшаться.*/
-//        List<LemmaModel> listLemmaModelsFromRepository = getListPagesByLemma(sortedLemmasByFrequency, siteFromQuery);
-
-            // если находим лемму
-            // ищем по репозиторию индексов страницы, соответствующие лемме
-            // сохраняем перечень моделей индексов в set
-            if (!listLemmaModelsFromRepository.isEmpty()) {
-                listLemmaModelsFromRepository.forEach(lemma -> {
-                    tempMatchingIndexes.addAll(indexRepository.findByLemmaId(lemma));
-                });
-            }
-//        }
-
+        // если находим лемму
+        // ищем по репозиторию индексов страницы, соответствующие лемме
+        // сохраняем перечень моделей индексов в set
+        if (!mapLemmasAndPages.isEmpty()) {
+            listLemmaModelsFromRepository.forEach(lemma -> {
+                tempMatchingIndexes.addAll(indexRepository.findByLemmaId(lemma));
+            });
+        }
 
         if (!tempMatchingIndexes.isEmpty()) {
             matchingSearchIndexes.addAll(tempMatchingIndexes);
@@ -131,9 +128,10 @@ public class SearchServiceImpl implements SearchService {
 
         /*Если страницы найдены, рассчитывать по каждой из них релевантность.*/
         Map<Integer, Double> relevancePage = calculateMaxPageRelevance(matchingSearchIndexes);
+
         /*Список объектов страниц с учетом полученных данных.*/
         List<PageData> pageDataList = setPageData(matchingSearchIndexes,
-                sortedLemmasByFrequency, relevancePage);
+                sortedMapLemmasByFrequencyOnPages, relevancePage);
         /*Сортировать страницы по убыванию релевантности (от большей к меньшей)*/
         pageDataList.sort((pageData1, pageData2) ->
                 Double.compare(pageData2.getRelevance(), pageData1.getRelevance()));
@@ -149,18 +147,17 @@ public class SearchServiceImpl implements SearchService {
     }
 
     //--------------------------------------------------------------------------------------------------------------
-    /* По леммам из запроса, находим все модели лемм из репозитория с учетом модели сайта.*/
+    /* 1.1. По леммам из запроса, находим все модели лемм из репозитория с учетом модели сайта.*/
     private List<LemmaModel> getListLemmaModelsByLemmaFromQuery(Map<String, Integer> uniqueLemmasFromQuery,
                                                                 String siteFromQuery) {
         List<LemmaModel> listLemmaModelsFromRepository = new ArrayList<>();
-        for (String lemmaFromSortedListQuery : uniqueLemmasFromQuery.keySet()) {
-            /* если сайт для поиска не задан, поиск должен происходить по всем проиндексированным сайтам,
-             ищем леммы из всего репозитория*/
+        for (String lemmaFromListQuery : uniqueLemmasFromQuery.keySet()) {
+            /* если сайт для поиска не задан, поиск должен происходить по всем проиндексированным сайтам*/
             if (siteFromQuery == null) {
-                listLemmaModelsFromRepository = lemmaRepository.findAllByLemma(lemmaFromSortedListQuery);
+                listLemmaModelsFromRepository.addAll(lemmaRepository.findAllByLemma(lemmaFromListQuery));
             } else {
                 SiteModel siteModel = siteRepository.findSiteModelByUrl(siteFromQuery);
-                LemmaModel lemmaModelFromRepository = lemmaRepository.findByLemmaAndSiteId(lemmaFromSortedListQuery,
+                LemmaModel lemmaModelFromRepository = lemmaRepository.findByLemmaAndSiteId(lemmaFromListQuery,
                         siteModel);
                 listLemmaModelsFromRepository.add(lemmaModelFromRepository);
             }
@@ -170,70 +167,37 @@ public class SearchServiceImpl implements SearchService {
     }
 
     //--------------------------------------------------------------------------------------------------------------
-    /* По моделям лемм, находим все страницы, на которых она встречается.*/
-    private Map<String, List<PageModel>> getPagesByLemmaModel(List<LemmaModel> listLemmaModelsFromRepository) {
-        Map<String, List<PageModel>> listLemmasAndPages = new LinkedHashMap<>();
+    /* 1.2. По моделям лемм, находим все страницы, на которых она встречается.
+    * 2. Исключать из полученного списка леммы, которые встречаются на слишком большом количестве страниц.
+    * Оставляем леммы, с встречаемостью менее 60% от общего количества страниц.*/
+    private Map<Integer, List<PageModel>> getPagesByLemmaModel(List<LemmaModel> listLemmaModelsFromRepository) {
+        Map<Integer, List<PageModel>> mapLemmasAndPages = new LinkedHashMap<>();
         listLemmaModelsFromRepository.forEach(lemmaModel -> {
             List<PageModel> listPageModels = indexRepository.findByLemmaId(lemmaModel).stream()
                     .map(IndexModel::getPageId)
                     .collect(Collectors.toList());
-            listLemmasAndPages.put(lemmaModel.getLemma(), listPageModels);
+            if(listPageModels.size() < pageRepository.findAll().size() * 60 / 100) {
+                mapLemmasAndPages.put(lemmaModel.getId(), listPageModels);
+                System.out.println("По моделям лемм, находим все страницы " +
+                        lemmaModel.getLemma() + " - " + lemmaModel.getId() + " - " + listPageModels.size()); // удалить
+            }
         });
-        return listLemmasAndPages;
+        System.out.println("SIZE mapLemmasAndPages " + mapLemmasAndPages.size()); // удалить
+        return mapLemmasAndPages;
     }
 
     //--------------------------------------------------------------------------------------------------------------
-    /* 2. Исключать из полученного списка леммы, которые встречаются на слишком большом количестве страниц.
-        Поэкспериментируйте и определите этот процент самостоятельно.*/
-    private Map<String, Integer> getLemma(List<LemmaModel> listLemmaModelsFromRepository) {
-        Map<String, Integer> listLemmas = new LinkedHashMap<>();
-        listLemmaModelsFromRepository.forEach(lemmaModel -> {
-            List<PageModel> listPageModels = indexRepository.findByLemmaId(lemmaModel).stream()
-                    .map(IndexModel::getPageId)
-                    .toList();
-            listLemmas.put(lemmaModel.getLemma(), listPageModels.size());
-        });
-        System.out.println(listLemmas);
-        return listLemmas;
-    }
-
-    //--------------------------------------------------------------------------------------------------------------
-    /* Сортировать леммы в порядке увеличения частоты встречаемости (по возрастанию значения поля frequency)
-     — от самых редких до самых частых./*/
-    private Map<String, Integer> getSortedLemmasByFrequency(Map<String, Integer> uniqueLemmas) {
-        Map<String, Integer> sortedLemmasByFrequency = uniqueLemmas.entrySet()
+    /* 3. Сортировать леммы в порядке увеличения частоты встречаемости на страницах (от самых редких до самых частых).*/
+    private Map<Integer, List<PageModel>> getSortedLemmasByFrequencyOnPages(Map<Integer,
+            List<PageModel>> mapLemmasAndPages) {
+        return mapLemmasAndPages.entrySet()
                 .stream()
-                .sorted(Map.Entry.comparingByValue())
+                .sorted(Comparator.comparing(l -> l.getValue().size()))
                 .collect(LinkedHashMap::new, (map, entry) ->
                         map.put(entry.getKey(), entry.getValue()), LinkedHashMap::putAll);
-        System.out.println("ОТСОРТИРОВАННЫЕ ЛЕММЫ ПО ВОЗРАСТАНИЮ ВСТРЕЧАЕМОСТИ ИЗ ЗАПРОСА ДЛЯ ПОИСКА "
-                + sortedLemmasByFrequency); // удалить
-        return sortedLemmasByFrequency;
     }
 
     //--------------------------------------------------------------------------------------------------------------
-    /*По первой, самой редкой лемме из списка, находить все страницы, на которых она встречается.*/
-    private List<LemmaModel> getListPagesByLemma(Map<String, Integer> sortedLemmasByFrequency,
-                                                 String siteFromQuery) {
-        List<LemmaModel> listLemmaModelsFromRepository = new ArrayList<>();
-        for (String lemmaFromSortedListQuery : sortedLemmasByFrequency.keySet()) {
-            /* если сайт для поиска не задан, поиск должен происходить по всем проиндексированным сайтам,
-             ищем леммы из всего репозитория*/
-            if (siteFromQuery == null) {
-                listLemmaModelsFromRepository = lemmaRepository.findAllByLemma(lemmaFromSortedListQuery);
-            } else {
-                SiteModel siteModel = siteRepository.findSiteModelByUrl(siteFromQuery);
-                LemmaModel lemmaModelFromRepository = lemmaRepository.findByLemmaAndSiteId(lemmaFromSortedListQuery,
-                        siteModel);
-                listLemmaModelsFromRepository.add(lemmaModelFromRepository);
-            }
-            System.out.println("НАШЛИ ЛЕММЫ В РЕПОЗИТОРИИ " + listLemmaModelsFromRepository.size()); // удалить
-        }
-        return listLemmaModelsFromRepository;
-    }
-
-    //--------------------------------------------------------------------------------------------------------------
-
 
 
     private void setSearchResult(List<PageData> pageDataList, int count) {
@@ -299,7 +263,7 @@ public class SearchServiceImpl implements SearchService {
 }
 
 
-        // МУСОРКА НА ВСЯКИЙ СЛУЧАЙ
+// МУСОРКА НА ВСЯКИЙ СЛУЧАЙ
 
 //    @Override
 //    public String beginSearch(String query, String siteFromQuery, Integer offset, Integer limit) throws IOException {

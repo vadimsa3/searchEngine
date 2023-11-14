@@ -7,7 +7,8 @@ import searchengine.model.SiteModel;
 import java.util.List;
 
 public interface LemmaRepository extends CrudRepository<LemmaModel, Integer> {
-    LemmaModel findByLemma(String word);
+//    Integer findMaxLemmaFrequencyBySiteId(SiteModel siteModel);
+    Integer getMaxFrequencyBySiteId(Integer integer);
     List<LemmaModel> findAllByLemma(String word);
     List<LemmaModel> findAllLemmasBySiteId(SiteModel siteModel);
     LemmaModel findByLemmaAndSiteId(String lemma, SiteModel siteModel);
