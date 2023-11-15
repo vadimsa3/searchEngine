@@ -12,4 +12,5 @@ public interface LemmaRepository extends CrudRepository<LemmaModel, Integer> {
     List<LemmaModel> findAllByLemma(String word);
     List<LemmaModel> findAllLemmasBySiteId(SiteModel siteModel);
     LemmaModel findByLemmaAndSiteId(String lemma, SiteModel siteModel);
+    LemmaModel findLemmaModelById(Integer integer);
 }

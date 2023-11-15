@@ -8,7 +8,8 @@ import searchengine.model.PageModel;
 import java.util.List;
 
 public interface IndexRepository extends CrudRepository<IndexModel, Integer> {
-    List<IndexModel> findByLemmaId(LemmaModel lemmaModel);
+    List<IndexModel> findAllByLemmaId(LemmaModel lemmaModel);
+    List<IndexModel> findByLemmaId(Integer integer);
     List<IndexModel> findByPageId(PageModel pageModel);
     void deleteAllIndexByPageId(Integer id);
 }
