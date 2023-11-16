@@ -22,6 +22,7 @@ public class WordFinderUtil {
 /*    Сниппеты — фрагменты текстов, в которых найдены совпадения, для
     всех страниц должны быть примерно одинаковой длины — такие, чтобы
     на странице с результатами поиска они занимали примерно три строки.
+
     В них необходимо выделять жирным совпадения с исходным поисковым
     запросом.
     Выделение должно происходить в формате HTML при помощи
@@ -29,30 +30,35 @@ public class WordFinderUtil {
     Алгоритм получения сниппета из веб-страницы реализуйте
     самостоятельно.*/
 
-    // !!!!!ПРОВЕРИТЬ ГЛЮК СО СНИППЕТАМИ !!!!
-        public String getSnippet(String fullContentPage, List<String> lemmas) throws IOException {
+    // !!!!!ПРОВЕРИТЬ ГЛЮК СО СНИППЕТАМИ - выдает один и тот-же, расширить до 3-х строк !!!!
+    // result = result.replaceAll(word,"<b>" + word + "<b>"); РЕАЛИЗОВАТЬ ВЫДЕЛЕНИЕ !!!!
+
+    public String getSnippet(String fullContentPage, List<String> lemmas) {
+        if (lemmas.isEmpty()) { return null; }
         String onlyTextPage = getTextFromFullContentPage(fullContentPage);
-        System.out.println("+++++++++++++ ПРОВЕРКА onlyTextPage в getSnippet " + onlyTextPage); // удалить
-        System.out.println("+++++++++++++ ПРОВЕРКА LEMMAS В getSnippet " + lemmas); // удалить
+        System.out.println("+++++++++++++ ПРОВЕРКА onlyTextPage из getSnippet " + onlyTextPage); // удалить
+        System.out.println("+++++++++++++ ПРОВЕРКА передачи списка лемм в getSnippet " + lemmas); // удалить
         String newEditText = onlyTextPage.toLowerCase(Locale.ROOT).replaceAll("([^а-я\\s])", "").trim();
-        System.out.println("+++++++++++++ ПРОВЕРКА newText в getSnippet " + newEditText); // удалить
-        String[] words = newEditText.split("\\s");
+        System.out.println("+++++++++++++ ПРОВЕРКА newText из getSnippet " + newEditText); // удалить
+        String[] onlyWordsFromText = newEditText.split("\\s");
+        System.out.println("+++++++++++++ ПРОВЕРКА onlyWordsFromText из getSnippet " + onlyWordsFromText.toString()); // удалить
+
+
         List<Integer> indexInText = new ArrayList<>();
-            for (String word : words) {
-                for (String lemma : lemmas) {
-                    if (isLemmaInText(lemma, word)) {
-                        indexInText.add(onlyTextPage.toLowerCase().indexOf(word));
-                    }
+        for (String word : onlyWordsFromText) {
+            for (String lemma : lemmas) {
+                if (isLemmaInText(lemma, word)) {
+                    indexInText.add(onlyTextPage.toLowerCase().indexOf(word));
                 }
             }
+        }
 
         Collections.sort(indexInText);
         int bestStartIndex = 0;
         int bestEndIndex = 0;
         int maxLemmas = 0;
-        for (int i = 0; i < indexInText.size(); i++) {
-            int startIndex = indexInText.get(i);
-            int endIndex = startIndex + 150;
+        for (int startIndex : indexInText) {
+            int endIndex = startIndex + 200;
             int nextSpaceIndex = onlyTextPage.indexOf(" ", endIndex);
             if (nextSpaceIndex != -1) {
                 endIndex = nextSpaceIndex;
@@ -103,7 +109,7 @@ public class WordFinderUtil {
         if (word.matches(russianAlphabet)) {
             return "Russian";
         } else if (word.matches(englishAlphabet)) {
-            return "Please enter a word in Russian language";
+            return "Необходимо ввести запрос на русском языке";
         } else {
             return "";
         }

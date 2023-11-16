@@ -11,5 +11,4 @@ public interface IndexRepository extends CrudRepository<IndexModel, Integer> {
     List<IndexModel> findAllByLemmaId(LemmaModel lemmaModel);
     List<IndexModel> findByLemmaId(Integer integer);
     List<IndexModel> findByPageId(PageModel pageModel);
-    void deleteAllIndexByPageId(Integer id);
 }
