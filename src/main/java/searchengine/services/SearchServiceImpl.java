@@ -16,6 +16,7 @@ import searchengine.repositories.SiteRepository;
 import searchengine.utilities.LemmaFinderUtil;
 import searchengine.utilities.WordFinderUtil;
 
+import javax.swing.text.Style;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -88,6 +89,9 @@ public class SearchServiceImpl implements SearchService {
 //        List<IndexModel> matchingSearchIndexes = new ArrayList<>();
 //        Set<IndexModel> tempMatchingIndexes = new HashSet<>();
 
+        /* !!!! Реализовать проверку на вводимый язык*/
+        checkEnterWordLanguage(query);
+
         /* 1. Разбиваем поисковый запрос на отдельные слова и формируем из этих слов список уникальных лемм,
         исключая междометия, союзы, предлоги и частицы + добавим их количество*/
         Map<String, Integer> uniqueLemmasFromQuery = lemmaFinderUtil.getLemmasMap(query);
@@ -131,6 +135,20 @@ public class SearchServiceImpl implements SearchService {
                 System.out.println("Сниппет : " + data.getSnippet()));
 
         return objectMapper.writeValueAsString(searchResult);
+    }
+
+    //--------------------------------------------------------------------------------------------------------------
+    // !!! РЕАЛИЗОВАТЬ - проверка на язык ввода слова
+    private String checkEnterWordLanguage(String query) {
+        String russianAlphabet = "[а-яА-Я]+";
+        String englishAlphabet = "[a-zA-z]+";
+        if (query.matches(russianAlphabet)) {
+            return "Russian";
+        } else if (query.matches(englishAlphabet)) {
+            return "Необходимо ввести запрос на русском языке";
+        } else {
+            return "";
+        }
     }
 
     //--------------------------------------------------------------------------------------------------------------
@@ -255,7 +273,7 @@ public class SearchServiceImpl implements SearchService {
                 pageData.setSiteName(siteName);
                 pageData.setUrl(url);
                 pageData.setTitle(title);
-                pageData.setSnippet("<b>" + snippet + "</b>"); // выделяет сниппет, а надо слово
+                pageData.setSnippet(snippet);
                 pageData.setRelevance(absolutPageRelevance / maxAbsoluteRelevance);
                 pageDataResult.add(pageData);
             }
