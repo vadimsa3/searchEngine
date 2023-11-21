@@ -7,7 +7,6 @@ spring.datasource.password: 3507988Asd
 spring.jpa.generate-ddl: false
 spring.jpa.hibernate.ddl-auto: update
 
-# показывает запросы к БД
 spring.jpa.show-sql: false
 
 # example values

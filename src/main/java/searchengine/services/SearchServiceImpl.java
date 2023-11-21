@@ -16,7 +16,6 @@ import searchengine.repositories.SiteRepository;
 import searchengine.utilities.LemmaFinderUtil;
 import searchengine.utilities.WordFinderUtil;
 
-import javax.swing.text.Style;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -90,6 +89,7 @@ public class SearchServiceImpl implements SearchService {
 //        Set<IndexModel> tempMatchingIndexes = new HashSet<>();
 
         /* !!!! Реализовать проверку на вводимый язык*/
+
         checkEnterWordLanguage(query);
 
         /* 1. Разбиваем поисковый запрос на отдельные слова и формируем из этих слов список уникальных лемм,
@@ -130,9 +130,8 @@ public class SearchServiceImpl implements SearchService {
 
         ObjectMapper objectMapper = new ObjectMapper();
 
-        // потом удалить
         searchResult.getData().forEach(data ->
-                System.out.println("Сниппет : " + data.getSnippet()));
+                System.out.println("Сниппет : " + data.getSnippet())); // потом удалить
 
         return objectMapper.writeValueAsString(searchResult);
     }
@@ -259,6 +258,7 @@ public class SearchServiceImpl implements SearchService {
                 String site = matchingSearchIndexesModels.get(i).getPageId().getSiteId().getUrl();
                 String siteName = matchingSearchIndexesModels.get(i).getPageId().getSiteId().getName();
                 String url = matchingSearchIndexesModels.get(i).getPageId().getPath();
+
                 String fullContentPage = matchingSearchIndexesModels.get(i).getPageId().getContent();
                 String title = wordFinderUtil.getTitleFromFullContentPage(fullContentPage);
 

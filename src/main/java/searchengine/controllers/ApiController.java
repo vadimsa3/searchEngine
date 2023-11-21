@@ -15,23 +15,15 @@ import searchengine.services.StatisticsService;
 
 import java.io.IOException;
 
-// тело ответа будет конвертироваться в JSON формат
-// запрос будет ожидать JSON в теле запроса
 @RestController
-// создаст конструктор с инициализацией добавляемых сервисов (чтобы не писать конструктор в коде)
-// загонит в конструктор все final поля
 @RequiredArgsConstructor
-// т.к. все запросы в этом классе будут начинаться с /api
 @RequestMapping("/api")
 public class ApiController {
-
-    // автоматическое создание и подключения репозиториев
     @Autowired
+
     private SiteRepository siteRepository;
     @Autowired
     private PageRepository pageRepository;
-
-    // автоматическое создание и подключение сервисов
     @Autowired
     private SiteIndexingService siteIndexingService;
     @Autowired
@@ -40,10 +32,6 @@ public class ApiController {
     private IndexOnePageService indexOnePageService;
     @Autowired
     private SearchService searchService;
-
-    /* !!!!!! Контроллер должен только получать данные от пользователя и вызывать нужный сервис.
-    Все расчеты и проверки должны быть в классах сервисах. !!!!!!!!
-    */
 
     /*  Метод возвращает статистику и другую служебную информацию о состоянии поисковых индексов и самого движка.
     Если ошибок индексации того или иного сайта нет, задавать ключ error не нужно.
@@ -70,7 +58,7 @@ public class ApiController {
     Метод останавливает текущий процесс индексации (переиндексации).
     Если в настоящий момент индексация или переиндексация не происходит, возвращает соответствующее сообщение об ошибке.
     */
-    @GetMapping("/stopIndexing") // НЕ ОСТАНАВЛИВАЕТСЯ ПРИ НАЖАТИИ
+    @GetMapping("/stopIndexing")
     public ResponseEntity<String> stopIndexing() {
         boolean isActive = siteIndexingService.stopIndexingSite();
         return isActive

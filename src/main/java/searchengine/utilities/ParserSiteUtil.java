@@ -69,12 +69,6 @@ public class ParserSiteUtil extends RecursiveAction {
             String link = queueLinks.poll(); // забираем ссылку из очереди
             if (link == null) {
                 status = "waiting";
-
-                // !!! ДОРАБОТАТЬ !!!
-                // если произошла ошибка и обход завершить не удалось, изменять
-                //статус на FAILED и вносить в поле last_error понятную
-                //информацию о произошедшей ошибке.
-
                 siteModelUtil.updateSiteModel(siteModel, StatusSiteIndex.INDEXED, LocalDateTime.now(),
                         lastError.get(siteModel.getId()));
                 return;
@@ -84,31 +78,14 @@ public class ParserSiteUtil extends RecursiveAction {
                 visitedLinks.add(link);
                 log.info("Site link - " + link);
                 try {
-
-/*                    // !!! ПРОВЕРИТЬ НАДО-ЛИ И ВНЕСТИ В КОНФИГУРАЦИЮ
-                    Connection.Response response =
-                            Jsoup.connect(link)
-                                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
-                                            "Gecko/20100101 Firefox/25.0")
-                                    .referrer("http://www.google.com")
-                                    .timeout(3000)
-                                    .ignoreHttpErrors(true)
-                                    .execute();
-                    Рекомендуется установить корректное значение User-Agent,
-                    например HeliontSearchBot (поисковый бот Heliont),
-                    где Heliont — пример названия вашего поискового движка, которое вы можете дать самостоятельно.
-                    Также рекомендуем вынести значения User-Agent и referer в конфигурацию вашего приложения
-                    и считывать их оттуда.*/
-
                     Connection.Response response = Jsoup.connect(link).ignoreHttpErrors(true).execute();
-
                     int statusCode = response.statusCode();
                     Document document = response.parse();
                     PageModel pageModel = pageModelUtil.createNewPageModel(link, document, siteModel, statusCode);
                     lemmaModelUtil.createNewLemmaModel(pageModel, siteModel);
                     Elements urls = document.getElementsByTag("a");
                     urls.forEach((innerLink) -> {
-                        synchronized (queueLinks) { // ??? НЕ ФАКТ ЧТО НАДО
+                        synchronized (queueLinks) {
                             String linkString = innerLink.absUrl("href");
                             if (linkString.contains(SiteIndexingServiceImpl.getDomainName())
                                     & !visitedLinks.contains(linkString)

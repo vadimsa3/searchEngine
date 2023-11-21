@@ -21,15 +21,10 @@ public class PageModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-//    @NaturalId // естественный ключ - в Hibernate если с path_page, то составной естественный ключ для ускорения запросов
-
     @ManyToOne(fetch = FetchType.LAZY, targetEntity = SiteModel.class, optional = false)
-//    @JoinColumn(foreignKey = @ForeignKey(name = "site_id_key_page"), columnDefinition = "Integer",
-//            referencedColumnName = "id", name = "site_id")
     @JoinColumn(name = "site_id", nullable = false)
     private SiteModel siteId;
 
-//    @NaturalId // естественный ключ - в Hibernate если с site_id, то составной естественный ключ для ускорения запросов
     @Column(columnDefinition = "TEXT", name = "path_page", nullable = false)
     private String path;
 

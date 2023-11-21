@@ -1,7 +1,5 @@
 package searchengine.utilities;
 
-//import org.apache.lucene.document.Document;
-
 import org.jsoup.nodes.Document;
 import org.jsoup.Jsoup;
 import org.springframework.stereotype.Service;
@@ -28,8 +26,7 @@ public class WordFinderUtil {
     Выделение должно происходить в формате HTML при помощи тега <b>.
     Алгоритм получения сниппета из веб-страницы реализуйте самостоятельно.*/
 
-    // !!!!!ПРОВЕРИТЬ ГЛЮК СО СНИППЕТАМИ - выдает один и тот-же !!!!
-    // result = result.replaceAll(word,"<b>" + word + "<b>"); РЕАЛИЗОВАТЬ ВЫДЕЛЕНИЕ !!!!
+    // result = result.replaceAll(word,"<b>" + word + "<b>"); ВЫДЕЛЯЕТ ВЕСЬ СНИППЕТ РЕАЛИЗОВАТЬ ВЫДЕЛЕНИЕ !!!!
 
     public String getSnippet(String fullContentPage, List<String> lemmas) {
         if (lemmas.isEmpty()) {

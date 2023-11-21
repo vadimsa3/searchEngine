@@ -5,7 +5,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
 
 import lombok.Getter;
 import org.slf4j.Logger;
@@ -57,30 +56,15 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     private Boolean isThreadsRunning = null;
     private final ForkJoinPool forkJoinPool = new ForkJoinPool();
 
-    // !!! ПРОВЕТИТЬ:
-    // В ТАБЛИЦУ ЛЕММ ПОПАДАЮТЛЕММЫ НЕ ВСЕХ САЙТОЫ,
-    // В ИНДЕКСЫ НЕ ВСЕ СТРАНИЦЫ
-    // ПРИ ЧЕТЫРЕХ САЙТАХ ПУТАЮТСЯ id В ТАБЛИЦЕ СТРАНИЦ (СТАВЯТСЯ НЕ ТЕ) И
-    // ЛЕММЫ ДАЛЬШЕ НЕ ИДУТ ПОСЛЕ ДВУХ САЙТОВ
-    // В ТАБЛИЦУ САЙТ ВНОСЯТСЯ НЕВЕРНЫЕ ДАННЫЕ ПО ИНДЕКСАЦИИ И ПРОВЕРИТЬ ОШИБКИ
-
     public boolean startIndexingSite() {
         isThreadsRunning = true;
-//        log.info("BEGIN" + isThreadsRunning);
-//        interrupted = false;
         sitesList.getSites().forEach((site) -> {
-            isIndexing(); // потом удалить
-            System.out.println(isIndexing()); // потом удалить
             deleteOldDataByUrlSite(site.getUrl());
             siteModel = siteModelUtil.createNewSiteModel(site);
             log.info("Start indexing site: " + site.getUrl());
-            isIndexing(); // потом удалить
-            System.out.println(isIndexing()); // потом удалить
             isThreadsRunning = startParsingSite(site.getUrl());
             log.info("Count pages from site " + siteModel.getName() + " - " + countPagesBySiteId(siteModel));
             log.info("Site indexing completed: " + site.getUrl());
-            isIndexing(); // потом удалить
-            System.out.println(isIndexing()); // потом удалить
         });
         return isThreadsRunning;
     }
@@ -88,8 +72,8 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     public boolean startParsingSite(String url) {
         String[] tmpArray = url.split("/");
         domainName = tmpArray[2];
-//        или так проверить
-//        String domainWebName = url.replaceAll("http(s)?://|www\\.|/.*", "");
+//        или так
+//        String domainName = url.replaceAll("http(s)?://|www\\.|/.*", "");
         queueLinks.add(url);
         List<ParserSiteUtil> taskListLinkParsers = new ArrayList<>();
         for (int threads = 0; threads < Runtime.getRuntime().availableProcessors(); ++threads) {
@@ -97,14 +81,12 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
                     pageRepository, siteModel, lastError, siteModelUtil, pageModelUtil, lemmaModelUtil, lemmaFinderUtil);
             taskListLinkParsers.add(parser);
         }
-//        ForkJoinPool forkJoinPool = new ForkJoinPool();
-        if (!forkJoinPool.isShutdown()) { // Returns true if this executor terminated
+        if (!forkJoinPool.isShutdown()) {
             taskListLinkParsers.forEach(forkJoinPool::invoke);
-            // !!! execute организует (асинхронное) выполнение данной задачи (выводит ошибку 500 во фронте) !!!
             taskListLinkParsers.forEach(parserSiteUtil -> {
                 if (parserSiteUtil.getStatus().equals("working")) {
                     try {
-                        Thread.sleep(1000L); // переводит текущий поток в режим ожидания, замедление
+                        Thread.sleep(1000L);
                     } catch (InterruptedException interruptedException) {
                         throw new RuntimeException(interruptedException);
                     }
@@ -142,19 +124,11 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         return !list.isEmpty();
     }
 
-    // !!! НАДО ДОРАБОТАТЬ НЕ ОСТАНАВЛИВАЕТ
-    // НАДО ЧИСТИТЬ СПИСОК ЗАДАЧ, ТОГДА ДОЛЖЕН САМ ОСТАНОВИТСЯ
-    // должна останавливать все потоки и записывать в базу данных для всех сайтов,
-    // страницы которых ещё не удалось обойти, состояние FAILED и текст
-    // ошибки «Индексация остановлена пользователем».
-
     @Override
     public boolean stopIndexingSite() {
         if (isIndexing()) {
             forkJoinPool.shutdownNow();
-
-            queueLinks.clear();        // !!!! ПРОВЕРИТЬ !!!!
-
+            queueLinks.clear();
             log.info("Indexing stopped by user!");
             siteRepository.findAll().forEach(siteModel -> {
                 if (siteModel.getStatusSiteIndex() != StatusSiteIndex.INDEXED) {
@@ -168,67 +142,4 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         }
         return false;
     }
-
-
-//    public boolean stopIndexing() {
-//        System.out.println("Потоков работает: " + threads.size());
-//
-//        AtomicBoolean isIndexing = new AtomicBoolean(false);
-//
-//        siteRepository.findAll().forEach(site -> {
-//            if (site.getStatus().equals(Status.INDEXING)) {
-//                isIndexing.set(true);
-//            }
-//        });
-//
-//        if (!isIndexing.get()) {
-//            return true;
-//        }
-//
-//        forkJoinPools.forEach(ForkJoinPool::shutdownNow);
-//        threads.forEach(Thread::interrupt);
-//
-//        siteRepository.findAll().forEach(site -> {
-//            site.setLastError("Остановка индексации");
-//            site.setStatus(Status.FAILED);
-//            siteRepository.save(site);
-//        });
-//
-//        threads.clear();
-//        forkJoinPools.clear();
-//
-//        return false;
-//    }
-
-
-    // НА УДАЛЕНИЕ ВЕРОЯТНО
-    public boolean startIndexSingleSite(Site site) {
-        SiteModel oldSiteModel = siteRepository.findSiteModelByUrl(site.getUrl());
-        if (oldSiteModel == null) {
-            siteModel = siteModelUtil.createNewSiteModel(site);
-            log.info("Start indexing single site: " + site.getUrl());
-            startParsingSite(site.getUrl());
-            log.info("Count pages from site " + siteModel.getName() + " - " + countPagesBySiteId(siteModel));
-            log.info("Site indexing completed: " + site.getUrl());
-        } else {
-            deleteOldDataByUrlSite(site.getUrl());
-            isThreadsRunning = startParsingSite(site.getUrl());  // reindexing
-        }
-        return isThreadsRunning;
-    }
 }
-
-//        if(!isInterrupted) {
-//
-//            for (String singleLink : getUrl(rootUrl)) {
-//                if (!parsedLinks.contains(singleLink)) {
-//                    SiteParser task = new SiteParser(sin.......
-//                }
-//                if (isInterrupted) {
-//                    taskList.clear();
-//                }
-//                ну и в stopIndexing isInterrupted = true
-//            }
-//
-//            private boolean isInterrupted () {
-//                return threadsRunning ? interrupted : true;
