@@ -6,6 +6,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.RecursiveAction;
 
+import lombok.Getter;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -39,9 +40,10 @@ public class ParserSiteUtil extends RecursiveAction {
     @Autowired
     private LemmaModelUtil lemmaModelUtil;
 
-    private Queue<String> queueLinks;
-    private Set<String> visitedLinks;
-    private Map<Integer, String> lastError;
+    private final Queue<String> queueLinks;
+    private final Set<String> visitedLinks;
+    private final Map<Integer, String> lastError;
+    @Getter
     private String status = null;
 
     public ParserSiteUtil(Queue<String> queueLinks, Set<String> visitedLinks, SiteRepository siteRepository,
@@ -60,10 +62,6 @@ public class ParserSiteUtil extends RecursiveAction {
         this.lemmaFinderUtil = lemmaFinderUtil;
     }
 
-    public String getStatus() {
-        return status;
-    }
-
     protected void compute() {
         while (true) {
             String link = queueLinks.poll(); // забираем ссылку из очереди
@@ -78,7 +76,14 @@ public class ParserSiteUtil extends RecursiveAction {
                 visitedLinks.add(link);
                 log.info("Site link - " + link);
                 try {
-                    Connection.Response response = Jsoup.connect(link).ignoreHttpErrors(true).execute();
+                    Connection.Response response = Jsoup.connect(link)
+                            .ignoreContentType(true)
+                            .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
+                                    "Gecko/20100101 Firefox/25.0")
+                            .referrer("http://www.google.com")
+                            .timeout(3000)
+                            .ignoreHttpErrors(true)
+                            .execute();
                     int statusCode = response.statusCode();
                     Document document = response.parse();
                     PageModel pageModel = pageModelUtil.createNewPageModel(link, document, siteModel, statusCode);

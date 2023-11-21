@@ -33,8 +33,6 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     @Autowired
     private PageRepository pageRepository;
     @Autowired
-    private LemmaRepository lemmaRepository;
-    @Autowired
     private SiteModelUtil siteModelUtil;
     @Autowired
     private PageModelUtil pageModelUtil;
@@ -42,15 +40,13 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     private LemmaModelUtil lemmaModelUtil;
     @Autowired
     private LemmaFinderUtil lemmaFinderUtil;
-    @Autowired
-    private IndexRepository indexRepository;
 
     @Getter
     private static String domainName;
 
     private static Set<String> visitedLinks = ConcurrentHashMap.newKeySet();
-    private static Queue<String> queueLinks = new ConcurrentLinkedQueue();
-    private static final HashMap<Integer, String> lastError = new HashMap();
+    private static final Queue<String> queueLinks = new ConcurrentLinkedQueue<>();
+    private static final HashMap<Integer, String> lastError = new HashMap<>();
     private SiteModel siteModel;
     private Boolean isInterrupted = null;
     private Boolean isThreadsRunning = null;
@@ -72,8 +68,6 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     public boolean startParsingSite(String url) {
         String[] tmpArray = url.split("/");
         domainName = tmpArray[2];
-//        или так
-//        String domainName = url.replaceAll("http(s)?://|www\\.|/.*", "");
         queueLinks.add(url);
         List<ParserSiteUtil> taskListLinkParsers = new ArrayList<>();
         for (int threads = 0; threads < Runtime.getRuntime().availableProcessors(); ++threads) {
@@ -104,11 +98,11 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 
     public void deleteOldDataByUrlSite(String urlSite) {
         List<SiteModel> listModelsToDelete = siteRepository.findSiteModelsByUrl(urlSite);
-        System.out.println("В репозитории находятся SiteModel с указанным URL - " + listModelsToDelete.size());
+        log.info("В репозитории находятся SiteModel с указанным URL - " + listModelsToDelete.size());
         if (!listModelsToDelete.isEmpty()) {
             for (SiteModel siteModelToDelete : listModelsToDelete) {
-                System.out.println("Кандидат на удаление из siteRepository - " + siteModelToDelete.getUrl());
                 siteRepository.delete(siteModelToDelete);
+                log.info("Успешно удалены устаревшие данные по сайту - " + siteModelToDelete.getUrl());
             }
         }
     }

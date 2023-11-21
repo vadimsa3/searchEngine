@@ -82,14 +82,12 @@ public class SearchServiceImpl implements SearchService {
     @Override
     public String beginSearch(String query, String siteFromQuery, Integer offset,
                               Integer limitOutputResults) throws IOException {
-        System.out.println("!!! НАЧАЛО ПОИСКА performSearch !!!"); // удалить
         this.offset = offset;
         this.limitOutputResults = limitOutputResults;
 //        List<IndexModel> matchingSearchIndexes = new ArrayList<>();
 //        Set<IndexModel> tempMatchingIndexes = new HashSet<>();
 
         /* !!!! Реализовать проверку на вводимый язык*/
-
         checkEnterWordLanguage(query);
 
         /* 1. Разбиваем поисковый запрос на отдельные слова и формируем из этих слов список уникальных лемм,
@@ -182,11 +180,11 @@ public class SearchServiceImpl implements SearchService {
                     .collect(Collectors.toList());
             if (listPageModels.size() < pageRepository.findAll().size() * 60 / 100) {
                 mapLemmasAndPages.put(lemmaModel.getId(), listPageModels);
-                System.out.println("По моделям лемм, находим все страницы " +
-                        lemmaModel.getLemma() + " - " + lemmaModel.getId() + " - " + listPageModels.size()); // удалить
+                System.out.println("По моделям лемм, находим все страницы: " + "Lemma - " +
+                        lemmaModel.getLemma() + ". " + "ID Lemma - " + lemmaModel.getId() + ". "
+                        + "Count lemmas - " + " - " + listPageModels.size()); // удалить потом
             }
         });
-        System.out.println("SIZE mapLemmasAndPages " + mapLemmasAndPages.size()); // удалить
         return mapLemmasAndPages;
     }
 
@@ -241,7 +239,7 @@ public class SearchServiceImpl implements SearchService {
     //--------------------------------------------------------------------------------------------------------------
     private List<PageData> setPageData(List<IndexModel> matchingSearchIndexesModels,
                                        Map<Integer, List<PageModel>> sortedMapLemmasByFrequencyOnPages,
-                                       Map<Integer, Double> pageRelevenceMap) throws IOException {
+                                       Map<Integer, Double> pageRelevenceMap) {
         List<PageData> pageDataResult = new ArrayList<>();
         double maxAbsoluteRelevance = Collections.max(pageRelevenceMap.values());
         /* offset — сдвиг от 0 для постраничного вывода
@@ -257,7 +255,10 @@ public class SearchServiceImpl implements SearchService {
             if (uniquePageId.add(newPageId)) {
                 String site = matchingSearchIndexesModels.get(i).getPageId().getSiteId().getUrl();
                 String siteName = matchingSearchIndexesModels.get(i).getPageId().getSiteId().getName();
+
+                // !!! ЧТО-ТО С АДРЕСОМ
                 String url = matchingSearchIndexesModels.get(i).getPageId().getPath();
+                System.out.println(" ++++ ЧТО-ТО С АДРЕСОМ ++++ " + url);
 
                 String fullContentPage = matchingSearchIndexesModels.get(i).getPageId().getContent();
                 String title = wordFinderUtil.getTitleFromFullContentPage(fullContentPage);

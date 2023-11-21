@@ -18,6 +18,8 @@ import searchengine.repositories.SiteRepository;
 import searchengine.utilities.*;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -77,14 +79,14 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
             } else {
                 SiteModel siteModel = getSiteModel(webPageUrl, site);
                 log.info("Start indexing single page: " + webPageUrl);
-                Connection.Response response =
-                        Jsoup.connect(webPageUrl)
-                                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
-                                        "Gecko/20100101 Firefox/25.0")
-                                .referrer("http://www.google.com")
-                                .timeout(3000)
-                                .ignoreHttpErrors(true)
-                                .execute();
+                Connection.Response response = Jsoup.connect(webPageUrl)
+                        .ignoreContentType(true)
+                        .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
+                                "Gecko/20100101 Firefox/25.0")
+                        .referrer("http://www.google.com")
+                        .timeout(3000)
+                        .ignoreHttpErrors(true)
+                        .execute();
                 int statusCode = response.statusCode();
                 Document document = response.parse();
                 log.info("End indexing single page: " + webPageUrl);
@@ -153,7 +155,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     }
 
     public PageModel saveNewOrUpdateOldPage(Site site, Document document, SiteModel siteModel,
-                                            Integer statusCode, String webPageUrl) {
+                                            Integer statusCode, String webPageUrl) throws MalformedURLException {
         String path = webPageUrl.replaceAll(site.getUrl(), "");
         PageModel pageModel = isPageRepositoryContainsPageModel(webPageUrl, siteModel);
         if (pageModel != null) {

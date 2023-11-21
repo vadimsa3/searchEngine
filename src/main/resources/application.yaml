@@ -13,11 +13,17 @@ spring.jpa.show-sql: false
 indexing-settings:
   sites:
 
-    - url: https://fidgroup.by
-      name: Группа ФИД - FidGroup
+#    - url: https://fidgroup.by
+#      name: Группа ФИД - FidGroup
+#
+#    - url: https://www.fidmash.ru
+#      name: ФИДМАШ - FidMash
+#
+#    - url: https://dombulgakova.ru/
+#      name: Dombulgakova
 
-    - url: https://www.fidmash.ru
-      name: ФИДМАШ - FidMash
+    - url: https://tortishnaya.ru
+      name: Тортишная - кондитерская
 
-    - url: https://dombulgakova.ru/
-      name: Dombulgakova
+    - url: https://crazypanda.ru
+      name: Крэйзи Панда Рус
