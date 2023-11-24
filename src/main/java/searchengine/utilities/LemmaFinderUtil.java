@@ -20,6 +20,7 @@ public class LemmaFinderUtil {
     public LemmaFinderUtil() throws IOException {
         luceneMorphology = new RussianLuceneMorphology();
     }
+
     /**
      * Метод разделяет текст на слова, находит все леммы и считает их количество.
      * @param text текст из которого будут выбираться леммы
@@ -50,7 +51,7 @@ public class LemmaFinderUtil {
         return lemmas;
     }
 
-    public Set<String> getUniqLemmasSet(String text) {
+    public Set<String> getUniqueLemmasSet(String text) {
         String[] textArray = arrayContainsRussianWords(text);
         Set<String> lemmaSet = new HashSet<>();
         for (String word : textArray) {
@@ -71,7 +72,6 @@ public class LemmaFinderUtil {
 
     private boolean hasParticleProperty(String wordBase) {
         for (String property : particlesNames) {
-            // !!! РАЗОБРАТЬСЯ ПОЧЕМУ ПРОХОДЯТ БУКВЫ И ТП !!!
             if (wordBase.toUpperCase().contains(property) || wordBase.length() <= 3) {
                 return true;
             }

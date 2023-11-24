@@ -14,9 +14,9 @@ public class SiteModelUtil {
     @Autowired
     private SiteRepository siteRepository;
 
-    public SiteModel createNewSiteModel(Site site) {
+    public SiteModel createNewSiteModel(Site site, StatusSiteIndex statusSiteIndex) {
         SiteModel siteModel = new SiteModel();
-        siteModel.setStatusSiteIndex(StatusSiteIndex.INDEXING);
+        siteModel.setStatusSiteIndex(statusSiteIndex);
         siteModel.setStatusTime(LocalDateTime.now());
         siteModel.setLastError("lastError.get(siteModel.getId())"); // !!! ИСПРАВИТЬ !!!
         // last_error TEXT — текст ошибки индексации или NULL, если её не было;

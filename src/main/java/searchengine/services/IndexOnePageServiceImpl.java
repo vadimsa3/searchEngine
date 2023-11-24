@@ -12,6 +12,7 @@ import searchengine.config.SitesList;
 import searchengine.model.LemmaModel;
 import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
+import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
@@ -82,7 +83,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
                 Connection.Response response = Jsoup.connect(webPageUrl)
                         .ignoreContentType(true)
                         .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
-                                "Gecko/20100101 Firefox/25.0")
+                        "Gecko/20100101 Firefox/25.0 Chrome/51.0.2704.106 Safari/537.36 OPR/38.0.2220.41")
                         .referrer("http://www.google.com")
                         .timeout(3000)
                         .ignoreHttpErrors(true)
@@ -109,7 +110,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
         SiteModel siteModel = isSiteRepositoryContainsSiteModel(webPageUrl);
         if (siteModel == null) {
             log.info("Репозиторий пустой или модель сайта отсутствует в репозитории");
-            siteModel = siteModelUtil.createNewSiteModel(site);
+            siteModel = siteModelUtil.createNewSiteModel(site, StatusSiteIndex.INDEXING);
             log.info("В репозиторий добавлена новая модель сайта - "
                     + siteModel.getUrl() + " "
                     + siteModel.getStatusTime());
@@ -176,9 +177,9 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
         Set<String> lemmasSet = lemmasMap.keySet();
         for (String word : lemmasSet) {
             LemmaModel existingLemma = lemmaRepository.findByLemmaAndSiteId(word, siteModel);
-            int countLemma = lemmasMap.get(word);
+            int countLemmaOnPage = lemmasMap.get(word);
             if (existingLemma != null) {
-                int count = existingLemma.getFrequency() + countLemma;
+                int count = existingLemma.getFrequency() + countLemmaOnPage;
                 existingLemma.setFrequency(count);
                 lemmaRepository.save(existingLemma);
                 indexModelUtil.createIndexModel(pageModel, existingLemma, count);
@@ -186,9 +187,9 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
                 LemmaModel newLemmaModel = new LemmaModel();
                 newLemmaModel.setSiteId(siteModel);
                 newLemmaModel.setLemma(word);
-                newLemmaModel.setFrequency(countLemma);
+                newLemmaModel.setFrequency(countLemmaOnPage);
                 lemmaRepository.save(newLemmaModel);
-                indexModelUtil.createIndexModel(pageModel, newLemmaModel, countLemma);
+                indexModelUtil.createIndexModel(pageModel, newLemmaModel, countLemmaOnPage);
             }
         }
     }

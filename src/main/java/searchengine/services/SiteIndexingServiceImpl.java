@@ -11,12 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.model.SiteModel;
 import searchengine.model.StatusSiteIndex;
-import searchengine.repositories.IndexRepository;
-import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.utilities.*;
@@ -25,6 +22,8 @@ import searchengine.utilities.*;
 public class SiteIndexingServiceImpl implements SiteIndexingService {
 
     private static final Logger log = LoggerFactory.getLogger(SiteIndexingServiceImpl.class);
+
+    private ForkJoinPool forkJoinPool;
 
     @Autowired
     private SitesList sitesList;
@@ -50,17 +49,32 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     private SiteModel siteModel;
     private Boolean isInterrupted = null;
     private Boolean isThreadsRunning = null;
-    private final ForkJoinPool forkJoinPool = new ForkJoinPool();
+    private final Map<String, Boolean> indexingStatus;
+
+    public SiteIndexingServiceImpl() {
+        forkJoinPool = new ForkJoinPool();
+        indexingStatus = new HashMap<>();
+    }
 
     public boolean startIndexingSite() {
         isThreadsRunning = true;
         sitesList.getSites().forEach((site) -> {
+            indexingStatus.put(site.getUrl(), false);
             deleteOldDataByUrlSite(site.getUrl());
-            siteModel = siteModelUtil.createNewSiteModel(site);
+            siteModel = siteModelUtil.createNewSiteModel(site, StatusSiteIndex.INDEXING);
             log.info("Start indexing site: " + site.getUrl());
             isThreadsRunning = startParsingSite(site.getUrl());
-            log.info("Count pages from site " + siteModel.getName() + " - " + countPagesBySiteId(siteModel));
-            log.info("Site indexing completed: " + site.getUrl());
+            log.info("Process indexing is complete: " + site.getUrl());
+            if (isThreadsRunning = false) {
+                siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
+                        LocalDateTime.now(), "Error indexing site");
+                indexingStatus.put(site.getUrl(), false);
+                log.error("Error indexing site");
+            } else {
+                indexingStatus.put(site.getUrl(), true);
+                log.info("Site indexing completed successfully: " + site.getUrl());
+                log.info("Count pages from site " + siteModel.getName() + " - " + countPagesBySiteId(siteModel));
+            }
         });
         return isThreadsRunning;
     }
@@ -120,9 +134,30 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 
     @Override
     public boolean stopIndexingSite() {
+                                    // !!! поработать над методом
+//        if (!forkJoinPool.isShutdown()) {
+//            indexingStatus.keySet().forEach(urlSite -> {
+//                Boolean isIndOk = indexingStatus.get(urlSite);
+//                if (!isIndOk) {
+//                    siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
+//                            LocalDateTime.now(), "Indexing stopped by user!");
+//                }
+//            });
+//            forkJoinPool.shutdownNow();
+//            queueLinks.clear();
+//            restartForkJoinPool();
+//            return true;
+//        } else {
+//            log.info("Indexing not stopped! Start indexing process before stopped!");
+//        }
+//        return false;
+//    }
+
         if (isIndexing()) {
             forkJoinPool.shutdownNow();
+            System.out.println("IS STOP INDEXING ?" + !forkJoinPool.isShutdown());
             queueLinks.clear();
+            restartForkJoinPool();
             log.info("Indexing stopped by user!");
             siteRepository.findAll().forEach(siteModel -> {
                 if (siteModel.getStatusSiteIndex() != StatusSiteIndex.INDEXED) {
@@ -136,4 +171,8 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
         }
         return false;
     }
-}
+
+        private void restartForkJoinPool () {
+            forkJoinPool = new ForkJoinPool();
+        }
+    }

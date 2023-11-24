@@ -79,7 +79,7 @@ public class ParserSiteUtil extends RecursiveAction {
                     Connection.Response response = Jsoup.connect(link)
                             .ignoreContentType(true)
                             .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
-                                    "Gecko/20100101 Firefox/25.0")
+                                    "Gecko/20100101 Firefox/25.0 Chrome/51.0.2704.106 Safari/537.36 OPR/38.0.2220.41")
                             .referrer("http://www.google.com")
                             .timeout(3000)
                             .ignoreHttpErrors(true)
