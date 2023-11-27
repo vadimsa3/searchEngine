@@ -57,7 +57,7 @@ public class SearchServiceImpl implements SearchService {
 //        Set<IndexModel> tempMatchingIndexes = new HashSet<>();
 
         /* !!!! Реализовать проверку на вводимый язык*/
-        checkEnterWordLanguage(query);
+        checkEnterQueryLanguage(query);
 
         /* 1. Разбиваем поисковый запрос на отдельные слова и формируем из этих слов список уникальных лемм,
         исключая междометия, союзы, предлоги и частицы + добавим их количество*/
@@ -104,41 +104,25 @@ public class SearchServiceImpl implements SearchService {
     }
 
     //--------------------------------------------------------------------------------------------------------------
-    // !!! РЕАЛИЗОВАТЬ - проверка на язык ввода слова
-    public Boolean checkEnterWordLanguage(String query) {
+    public Boolean checkEnterQueryLanguage(String query) {
+        boolean result = true;
         String englishAlphabet = "[a-zA-z]+";
-        String [] arr = query.toLowerCase(Locale.ROOT)
-                .split("\\s+");
-        for (String k : arr) {
-            System.out.println(k);
-            if (k.matches(englishAlphabet) || arr.length.) {
-                log.warn("Необходимо сменить язык ввода на русский или ввести запрос" + query);
-                return false;
-            } else {
-                log.info("Поисковый запрос" + query);
+        if (query.isEmpty()) {
+            log.warn("Запрос не введен.");
+            result = false;
+        } else {
+            String[] wordsFromQuery = query.toLowerCase(Locale.ROOT).split("\\s+");
+            for (String word : wordsFromQuery) {
+                if (word.matches(englishAlphabet)) {
+                    log.warn("Необходимо сменить язык ввода на русский.");
+                    result = false;
+                } else {
+                    log.info("Поисковый запрос: " + query);
+                }
             }
         }
-
-
-//        String russianAlphabet = "[а-яА-Я]+";
-//        String englishAlphabet = "[a-zA-z]+";
-//        if (query.toLowerCase().contains(englishAlphabet.toLowerCase()) || query.isEmpty()) {
-//            log.warn("Необходимо сменить язык ввода на русский или ввести запрос" + query);
-//            return false;
-//        } else {
-//            log.info("Поисковый запрос" + query);
-//        }
-        return true;
+        return result;
     }
-
-//        if (query.matches(russianAlphabet)) {
-//            log.info("Поисковый запрос" + query);
-//            return true;
-//        } else if (query.matches(englishAlphabet)) {
-//            log.warn("Необходимо сменить язык ввода на русский" + query);
-//        }
-//        return false;
-
 
     //--------------------------------------------------------------------------------------------------------------
     /* 1.1. По леммам из запроса, находим все модели лемм из репозитория с учетом модели сайта.*/

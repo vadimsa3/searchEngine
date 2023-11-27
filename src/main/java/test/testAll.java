@@ -5,12 +5,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import searchengine.model.IndexModel;
-import searchengine.model.LemmaModel;
-import searchengine.model.PageModel;
-import searchengine.model.SiteModel;
 import searchengine.repositories.LemmaRepository;
-import searchengine.services.SearchService;
 import searchengine.services.SearchServiceImpl;
 import searchengine.utilities.LemmaFinderUtil;
 
@@ -68,11 +63,11 @@ public class testAll {
     @Test
     void testCheckEnterWordLanguage() throws IOException {
         SearchServiceImpl searchService = new SearchServiceImpl();
-        String query1 = "Запрос запро рпоа";
-        String query2 = "Query not yes";
-        String query3 = "  ";
-        System.out.println("Query 1 " + searchService.checkEnterWordLanguage(query1));
-        System.out.println("Query 2 " + searchService.checkEnterWordLanguage(query2));
-        System.out.println("Empty 3 " + searchService.checkEnterWordLanguage(query3));
+        String queryRus = "Рецепт клубничного торта";
+        String queryEng = "Рецепт Strawberry";
+        String queryEmpty = "";
+        System.out.println("QueryRus " + searchService.checkEnterQueryLanguage(queryRus));
+        System.out.println("QueryEng " + searchService.checkEnterQueryLanguage(queryEng));
+        System.out.println("QueryEmpty " + searchService.checkEnterQueryLanguage(queryEmpty));
     }
 }
