@@ -10,6 +10,8 @@ import searchengine.model.LemmaModel;
 import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
 import searchengine.repositories.LemmaRepository;
+import searchengine.services.SearchService;
+import searchengine.services.SearchServiceImpl;
 import searchengine.utilities.LemmaFinderUtil;
 
 import java.io.IOException;
@@ -61,5 +63,16 @@ public class testAll {
             int countLemmaOnPage = lemmasMap.get(word);
             System.out.println(word + " - " +  countLemmaOnPage);
         }
+    }
+
+    @Test
+    void testCheckEnterWordLanguage() throws IOException {
+        SearchServiceImpl searchService = new SearchServiceImpl();
+        String query1 = "Запрос запро рпоа";
+        String query2 = "Query not yes";
+        String query3 = "  ";
+        System.out.println("Query 1 " + searchService.checkEnterWordLanguage(query1));
+        System.out.println("Query 2 " + searchService.checkEnterWordLanguage(query2));
+        System.out.println("Empty 3 " + searchService.checkEnterWordLanguage(query3));
     }
 }

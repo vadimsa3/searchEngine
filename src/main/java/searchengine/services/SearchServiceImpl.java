@@ -1,6 +1,8 @@
 package searchengine.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import searchengine.dto.search.PageData;
@@ -20,38 +22,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
-        /*Метод осуществляет поиск страниц по переданному поисковому запросу (параметр query).
-        Чтобы выводить результаты порционно, также можно задать параметры
-        offset (сдвиг от начала списка результатов)
-        и limit (количество результатов, которое необходимо вывести).
-        В ответе выводится общее количество результатов (count), не зависящее от значений параметров offset и limit,
-        и массив data с результатами поиска.
-        Каждый результат — это объект, содержащий свойства результата поиска
-        (см. ниже структуру и описание каждого свойства).
-        Если поисковый запрос не задан или ещё нет готового индекса
-        (сайт, по которому ищем, или все сайты сразу не проиндексированы),
-        метод должен вернуть соответствующую ошибку
-        (см. ниже пример). Тексты ошибок должны быть понятными и отражать суть ошибок.*/
-
-        /*Метод должен выполнять следующий алгоритм:
-        ● 1. Разбивать поисковый запрос на отдельные слова и формировать из этих слов список уникальных лемм,
-        исключая междометия, союзы, предлоги и частицы. Используйте для этого код,
-        который вы уже писали в предыдущем этапе.
-        ● 2. Исключать из полученного списка леммы, которые встречаются на слишком большом количестве страниц.
-        Поэкспериментируйте и определите этот процент самостоятельно.
-        ● 3. Сортировать леммы в порядке увеличения частоты встречаемости (по возрастанию значения поля frequency)
-        — от самых редких до самых частых.
-        ● 4. По первой, самой редкой лемме из списка, находить все страницы, на которых она встречается.
-        Далее искать соответствия следующей леммы из этого списка страниц, а затем повторять операцию
-        по каждой следующей лемме. Список страниц при этом на каждой итерации должен уменьшаться.
-        Если в итоге не осталось ни одной страницы, то выводить пустой список.
-        ● 5. Если страницы найдены, рассчитывать по каждой из них релевантность
-        (и выводить её потом, см. ниже) и возвращать.
-        ● 6.Для каждой страницы рассчитывать абсолютную релевантность — сумму всех rank всех найденных на странице лемм
-        (из таблицы index), которая делится на максимальное значение этой абсолютной релевантности для всех
-        найденных страниц.*/
-
 @Service
 public class SearchServiceImpl implements SearchService {
 
@@ -64,14 +34,13 @@ public class SearchServiceImpl implements SearchService {
     @Autowired
     PageRepository pageRepository;
 
-    // offset (сдвиг от начала списка результатов)
     private Integer offset;
-    // limit (количество результатов, которое необходимо вывести)
     private Integer limitOutputResults;
     private final LemmaFinderUtil lemmaFinderUtil;
     private final SearchResult searchResult;
     private final WordFinderUtil wordFinderUtil;
     Map<Integer, Integer> listLemmasAndCountPages = new HashMap<>();
+    private static final Logger log = LoggerFactory.getLogger(SiteIndexingServiceImpl.class);
 
     public SearchServiceImpl() throws IOException {
         lemmaFinderUtil = new LemmaFinderUtil();
@@ -136,17 +105,40 @@ public class SearchServiceImpl implements SearchService {
 
     //--------------------------------------------------------------------------------------------------------------
     // !!! РЕАЛИЗОВАТЬ - проверка на язык ввода слова
-    private String checkEnterWordLanguage(String query) {
-        String russianAlphabet = "[а-яА-Я]+";
+    public Boolean checkEnterWordLanguage(String query) {
         String englishAlphabet = "[a-zA-z]+";
-        if (query.matches(russianAlphabet)) {
-            return "Russian";
-        } else if (query.matches(englishAlphabet)) {
-            return "Необходимо ввести запрос на русском языке";
-        } else {
-            return "";
+        String [] arr = query.toLowerCase(Locale.ROOT)
+                .split("\\s+");
+        for (String k : arr) {
+            System.out.println(k);
+            if (k.matches(englishAlphabet) || arr.length.) {
+                log.warn("Необходимо сменить язык ввода на русский или ввести запрос" + query);
+                return false;
+            } else {
+                log.info("Поисковый запрос" + query);
+            }
         }
+
+
+//        String russianAlphabet = "[а-яА-Я]+";
+//        String englishAlphabet = "[a-zA-z]+";
+//        if (query.toLowerCase().contains(englishAlphabet.toLowerCase()) || query.isEmpty()) {
+//            log.warn("Необходимо сменить язык ввода на русский или ввести запрос" + query);
+//            return false;
+//        } else {
+//            log.info("Поисковый запрос" + query);
+//        }
+        return true;
     }
+
+//        if (query.matches(russianAlphabet)) {
+//            log.info("Поисковый запрос" + query);
+//            return true;
+//        } else if (query.matches(englishAlphabet)) {
+//            log.warn("Необходимо сменить язык ввода на русский" + query);
+//        }
+//        return false;
+
 
     //--------------------------------------------------------------------------------------------------------------
     /* 1.1. По леммам из запроса, находим все модели лемм из репозитория с учетом модели сайта.*/

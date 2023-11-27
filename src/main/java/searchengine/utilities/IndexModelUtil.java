@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import searchengine.model.IndexModel;
 import searchengine.model.LemmaModel;
 import searchengine.model.PageModel;
-import searchengine.model.SiteModel;
 import searchengine.repositories.IndexRepository;
 
 @Service
