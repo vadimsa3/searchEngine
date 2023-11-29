@@ -45,7 +45,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     @Autowired
     private SiteModelUtil siteModelUtil;
 
-    private static final Logger log = LoggerFactory.getLogger(SiteIndexingServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(IndexOnePageServiceImpl.class);
     private String urlSiteFromWebPageUrl;
 
     /*

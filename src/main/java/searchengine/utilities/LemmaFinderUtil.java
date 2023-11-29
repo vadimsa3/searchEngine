@@ -34,7 +34,7 @@ public class LemmaFinderUtil {
                 continue;
             }
             List<String> wordBaseForms = luceneMorphology.getMorphInfo(word);
-            if (anyWordBaseBelongToParticle(wordBaseForms)) {
+            if (anyWordBaseFormBelongToParticle(wordBaseForms)) {
                 continue;
             }
             List<String> normalForms = luceneMorphology.getNormalForms(word);
@@ -57,7 +57,7 @@ public class LemmaFinderUtil {
         for (String word : textArray) {
             if (!word.isEmpty() && isCorrectWordForm(word)) {
                 List<String> wordBaseForms = luceneMorphology.getMorphInfo(word);
-                if (anyWordBaseBelongToParticle(wordBaseForms)) {
+                if (anyWordBaseFormBelongToParticle(wordBaseForms)) {
                     continue;
                 }
                 lemmaSet.addAll(luceneMorphology.getNormalForms(word));
@@ -66,7 +66,7 @@ public class LemmaFinderUtil {
         return lemmaSet;
     }
 
-    public boolean anyWordBaseBelongToParticle(List<String> wordBaseForms) {
+    public boolean anyWordBaseFormBelongToParticle(List<String> wordBaseForms) {
         return wordBaseForms.stream().anyMatch(this::hasParticleProperty);
     }
 

@@ -103,7 +103,6 @@ public class ApiController {
             @RequestParam(required = false, defaultValue = "0") Integer offset,
             @RequestParam(required = false, defaultValue = "20") Integer limit
     ) throws IOException {
-        System.out.println(query); // потом удалить
         if (query == null || query.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("{\"result\": false, \"error\": \"Задан пустой поисковый запрос\"}");

@@ -18,44 +18,35 @@ public class WordFinderUtil {
         lemmaFinderUtil = new LemmaFinderUtil();
     }
 
-/*  Сниппеты — фрагменты текстов, в которых найдены совпадения, для
-    всех страниц должны быть примерно одинаковой длины — такие, чтобы
-    на странице с результатами поиска они занимали примерно три строки.
-
-    В них необходимо выделять жирным совпадения с исходным поисковым запросом.
-    Выделение должно происходить в формате HTML при помощи тега <b>.
-    Алгоритм получения сниппета из веб-страницы реализуйте самостоятельно.*/
-
-    // result = result.replaceAll(word,"<b>" + word + "<b>"); ВЫДЕЛЯЕТ ВЕСЬ СНИППЕТ РЕАЛИЗОВАТЬ ВЫДЕЛЕНИЕ !!!!
-
-    public String getSnippet(String fullContentPage, List<String> lemmas) {
+    public List<String> getSnippet(String fullContentPage, List<String> lemmas) {
         if (lemmas.isEmpty()) {
             return null;
         }
-        String onlyTextPage = getTextFromFullContentPage(fullContentPage);
-        List<Integer> indexInText = getFirstIndexInText(onlyTextPage, lemmas);
-        int start = 0;
-        int end = 0;
+        String onlyTextFromPage = getTextFromFullContentPage(fullContentPage);
+        List<Integer> indexesLemmasInText = getFirstIndexInText(onlyTextFromPage, lemmas);
+        int startSnippet = 0;
+        int endSnippet = 0;
         int maxLemmas = 0;
-        for (int startIndex : indexInText) {
-            int endIndex = startIndex + 200; // сниппет в 3 строки
-            int nextSpaceIndex = onlyTextPage.indexOf(" ", endIndex);
+        for (int startIndex : indexesLemmasInText) {
+            int endIndex = startIndex + 200;
+            int nextSpaceIndex = onlyTextFromPage.indexOf(" ", endIndex);
             if (nextSpaceIndex != -1) {
                 endIndex = nextSpaceIndex;
             }
             int currentLemmas = 0;
             for (String lemma : lemmas) {
-                if (onlyTextPage.toLowerCase().substring(startIndex, endIndex).contains(lemma)) {
+                if (onlyTextFromPage.toLowerCase().substring(startIndex, endIndex).contains(lemma)) {
                     currentLemmas++;
                 }
             }
             if (currentLemmas > maxLemmas) {
                 maxLemmas = currentLemmas;
-                start = startIndex;
-                end = endIndex;
+                startSnippet = startIndex;
+                endSnippet = endIndex;
             }
         }
-        return onlyTextPage.substring(start, end);
+        String textSnippet = onlyTextFromPage.substring(startSnippet, endSnippet);
+        return getTextSnippetWithSelectLemma(textSnippet, lemmas);
     }
 
     public List<Integer> getFirstIndexInText(String onlyTextPage, List<String> lemmas) {
@@ -87,13 +78,23 @@ public class WordFinderUtil {
             return false;
         }
         List<String> wordBaseForms = lemmaFinderUtil.luceneMorphology.getMorphInfo(word);
-        if (lemmaFinderUtil.anyWordBaseBelongToParticle(wordBaseForms)) {
+        if (lemmaFinderUtil.anyWordBaseFormBelongToParticle(wordBaseForms)) {
             return false;
         }
-        List<String> normalForms = lemmaFinderUtil.luceneMorphology.getNormalForms(word);
-        if (normalForms.isEmpty()) {
+        List<String> normalWordForms = lemmaFinderUtil.luceneMorphology.getNormalForms(word);
+        if (normalWordForms.isEmpty()) {
             return false;
         }
-        return normalForms.get(0).equals(lemma);
+        return normalWordForms.get(0).equals(lemma);
+    }
+
+    private List<String> getTextSnippetWithSelectLemma(String textSnippet, List<String> lemmas) {
+        List<String> result = new ArrayList<>();
+        lemmas.forEach(lemma -> {
+            String textSnippetWithLemmaSelect = textSnippet.toLowerCase()
+                    .replaceAll(lemma, "<b> ".concat(lemma).concat(" </b>"));
+            result.add(textSnippetWithLemmaSelect);
+        });
+        return result;
     }
 }

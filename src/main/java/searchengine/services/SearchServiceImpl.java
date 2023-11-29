@@ -39,8 +39,7 @@ public class SearchServiceImpl implements SearchService {
     private final LemmaFinderUtil lemmaFinderUtil;
     private final SearchResult searchResult;
     private final WordFinderUtil wordFinderUtil;
-    Map<Integer, Integer> listLemmasAndCountPages = new HashMap<>();
-    private static final Logger log = LoggerFactory.getLogger(SiteIndexingServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(SearchServiceImpl.class);
 
     public SearchServiceImpl() throws IOException {
         lemmaFinderUtil = new LemmaFinderUtil();
@@ -53,11 +52,7 @@ public class SearchServiceImpl implements SearchService {
                               Integer limitOutputResults) throws IOException {
         this.offset = offset;
         this.limitOutputResults = limitOutputResults;
-//        List<IndexModel> matchingSearchIndexes = new ArrayList<>();
-//        Set<IndexModel> tempMatchingIndexes = new HashSet<>();
-
-        /* !!!! Реализовать проверку на вводимый язык*/
-        checkEnterQueryLanguage(query);
+        checkLanguageInputQuery(query);
 
         /* 1. Разбиваем поисковый запрос на отдельные слова и формируем из этих слов список уникальных лемм,
         исключая междометия, союзы, предлоги и частицы + добавим их количество*/
@@ -94,30 +89,25 @@ public class SearchServiceImpl implements SearchService {
                 Double.compare(pageData2.getRelevance(), pageData1.getRelevance()));
         // и выдавать в виде списка объектов
         setSearchResult(pageDataList, matchingSearchIndexesModels.size());
-
         ObjectMapper objectMapper = new ObjectMapper();
-
-        searchResult.getData().forEach(data ->
-                System.out.println("Сниппет : " + data.getSnippet())); // потом удалить
-
         return objectMapper.writeValueAsString(searchResult);
     }
 
     //--------------------------------------------------------------------------------------------------------------
-    public Boolean checkEnterQueryLanguage(String query) {
+    public Boolean checkLanguageInputQuery(String queryInput) {
         boolean result = true;
         String englishAlphabet = "[a-zA-z]+";
-        if (query.isEmpty()) {
-            log.warn("Запрос не введен.");
+        if (queryInput.isEmpty()) {
+            log.warn("Внимание! Запрос не введен. Необходимо ввести запрос на русском языке.");
             result = false;
         } else {
-            String[] wordsFromQuery = query.toLowerCase(Locale.ROOT).split("\\s+");
+            String[] wordsFromQuery = queryInput.toLowerCase(Locale.ROOT).split("\\s+");
             for (String word : wordsFromQuery) {
                 if (word.matches(englishAlphabet)) {
-                    log.warn("Необходимо сменить язык ввода на русский.");
+                    log.warn("Внимание! Необходимо сменить язык ввода на русский.");
                     result = false;
                 } else {
-                    log.info("Поисковый запрос: " + query);
+                    log.info("Поисковый запрос: " + queryInput);
                 }
             }
         }
@@ -130,7 +120,6 @@ public class SearchServiceImpl implements SearchService {
                                                                 String siteFromQuery) {
         List<LemmaModel> listLemmaModelsFromRepository = new ArrayList<>();
         for (String lemmaFromListQuery : uniqueLemmasFromQuery.keySet()) {
-            /* если сайт для поиска не задан, поиск должен происходить по всем проиндексированным сайтам*/
             if (siteFromQuery == null) {
                 listLemmaModelsFromRepository.addAll(lemmaRepository.findAllByLemma(lemmaFromListQuery));
             } else {
@@ -140,7 +129,6 @@ public class SearchServiceImpl implements SearchService {
                 listLemmaModelsFromRepository.add(lemmaModelFromRepository);
             }
         }
-        System.out.println("НАШЛИ МОДЕЛИ ЛЕМЫ В РЕПОЗИТОРИИ " + listLemmaModelsFromRepository.size()); // удалить
         return listLemmaModelsFromRepository;
     }
 
@@ -234,15 +222,15 @@ public class SearchServiceImpl implements SearchService {
 
                 // !!! ЧТО-ТО С АДРЕСОМ
                 String url = matchingSearchIndexesModels.get(i).getPageId().getPath();
-                System.out.println(" ++++ ЧТО-ТО С АДРЕСОМ ++++ " + url);
+                System.out.println(" ++++ ЧТО-ТО С АДРЕСОМ ++++ " + url); // delete
 
                 String fullContentPage = matchingSearchIndexesModels.get(i).getPageId().getContent();
                 String title = wordFinderUtil.getTitleFromFullContentPage(fullContentPage);
 
                 List<String> lemmas = convertLemmaIdToListLemmas(sortedMapLemmasByFrequencyOnPages);
 
-                String snippet = wordFinderUtil.getSnippet(fullContentPage, lemmas);
-                System.out.println("+++++++++++++ ПРОВЕРКА snippet " + snippet); // удалить
+//                String snippet = wordFinderUtil.getSnippet(fullContentPage, lemmas);
+                List<String> snippet = wordFinderUtil.getSnippet(fullContentPage, lemmas);
 
                 PageData pageData = new PageData();
                 double absolutPageRelevance = pageRelevenceMap.getOrDefault(newPageId, 0.0);
@@ -250,6 +238,7 @@ public class SearchServiceImpl implements SearchService {
                 pageData.setSiteName(siteName);
                 pageData.setUrl(url);
                 pageData.setTitle(title);
+//                pageData.setSnippet(snippet);
                 pageData.setSnippet(snippet);
                 pageData.setRelevance(absolutPageRelevance / maxAbsoluteRelevance);
                 pageDataResult.add(pageData);

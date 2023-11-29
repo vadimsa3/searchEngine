@@ -10,8 +10,7 @@ import searchengine.services.SearchServiceImpl;
 import searchengine.utilities.LemmaFinderUtil;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class testAll {
 
@@ -56,7 +55,7 @@ public class testAll {
         Set<String> lemmasSet = lemmasMap.keySet();
         for (String word : lemmasSet) {
             int countLemmaOnPage = lemmasMap.get(word);
-            System.out.println(word + " - " +  countLemmaOnPage);
+            System.out.println(word + " - " + countLemmaOnPage);
         }
     }
 
@@ -66,8 +65,9 @@ public class testAll {
         String queryRus = "Рецепт клубничного торта";
         String queryEng = "Рецепт Strawberry";
         String queryEmpty = "";
-        System.out.println("QueryRus " + searchService.checkEnterQueryLanguage(queryRus));
-        System.out.println("QueryEng " + searchService.checkEnterQueryLanguage(queryEng));
-        System.out.println("QueryEmpty " + searchService.checkEnterQueryLanguage(queryEmpty));
+        System.out.println("QueryRus " + searchService.checkLanguageInputQuery(queryRus));
+        System.out.println("QueryEng " + searchService.checkLanguageInputQuery(queryEng));
+        System.out.println("QueryEmpty " + searchService.checkLanguageInputQuery(queryEmpty));
     }
 }
+
