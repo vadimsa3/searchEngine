@@ -1,5 +1,6 @@
 package searchengine.utilities;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Queue;
@@ -64,58 +65,75 @@ public class ParserSiteUtil extends RecursiveAction {
     }
 
     protected void compute() {
-        while (true) {
-            String link = queueLinks.poll();
-            if (link == null) {
-                status = "waiting";
-                siteModelUtil.updateSiteModel(siteModel, StatusSiteIndex.INDEXED, LocalDateTime.now(),
-                        lastError.get(siteModel.getId()));
-                return;
-            }
-            if (!visitedLinks.contains(link)) {
-                status = "working";
-                visitedLinks.add(link);
-                log.info("Site link - " + link);
-                try {
-                    Connection.Response response = Jsoup.connect(link)
-                            .ignoreContentType(true)
-                            .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
-                                    "Gecko/20100101 Firefox/25.0 Chrome/51.0.2704.106 Safari/537.36 OPR/38.0.2220.41")
-                            .referrer("http://www.google.com")
-                            .timeout(3000)
-                            .ignoreHttpErrors(true)
-                            .execute();
-                    int statusCode = response.statusCode();
-                    Document document = response.parse();
-                    PageModel pageModel = pageModelUtil.createNewPageModel(link, document, siteModel, statusCode);
-                    lemmaModelUtil.createNewLemmaModel(pageModel, siteModel);
-                    Elements urls = document.getElementsByTag("a");
-                    urls.forEach((innerLink) -> {
-                        synchronized (queueLinks) {
-                            String linkString = innerLink.absUrl("href");
+            while (true) {
+                // !!!!!!!!!!!
+                System.out.println("+++++  queueLinks +++++ " + queueLinks.size());
+                if (isInterrupted()) {
+                    queueLinks.clear();
+                }
 
-                            if (linkString.contains(SiteIndexingServiceImpl.getDomainName())
-                                    & !visitedLinks.contains(linkString)
-                                    && linkString.startsWith(link)
-                                    && !isFile(linkString)) {
-
-                                queueLinks.add(linkString);
-                                ParserSiteUtil parserSiteUtil = new ParserSiteUtil(queueLinks, visitedLinks,
-                                        siteRepository, pageRepository, siteModel, lastError, siteModelUtil,
-                                        pageModelUtil, lemmaModelUtil, lemmaFinderUtil);
-                                parserSiteUtil.fork();
-                                siteModelUtil.updateSiteModel(siteModel, StatusSiteIndex.INDEXING,
-                                        LocalDateTime.now(), lastError.get(siteModel.getId()));
+                String link = queueLinks.poll();
+                if (link == null) {
+                    status = "waiting";
+                    siteModelUtil.updateSiteModel(siteModel, StatusSiteIndex.INDEXED, LocalDateTime.now(),
+                            lastError.get(siteModel.getId()));
+                    return;
+                }
+                if (!visitedLinks.contains(link)) {
+                    status = "working";
+                    visitedLinks.add(link);
+                    log.info("Site link - " + link);
+                    try {
+                        int statusCode = getResponse(link).statusCode();
+                        Document document = getResponse(link).parse();
+                        PageModel pageModel = pageModelUtil.createNewPageModel(link, document, siteModel, statusCode);
+                        lemmaModelUtil.createNewLemmaModel(pageModel, siteModel);
+                        Elements urls = document.getElementsByTag("a");
+                        urls.forEach((innerLink) -> {
+                            synchronized (queueLinks) {
+                                String linkString = innerLink.absUrl("href");
+                                if (linkString.contains(SiteIndexingServiceImpl.getDomainName())
+                                        & !visitedLinks.contains(linkString)
+                                        && linkString.startsWith(link)
+                                        && !isFile(linkString)) {
+                                    queueLinks.add(linkString);
+                                    ParserSiteUtil parserSiteUtil = new ParserSiteUtil(queueLinks, visitedLinks,
+                                            siteRepository, pageRepository, siteModel, lastError, siteModelUtil,
+                                            pageModelUtil, lemmaModelUtil, lemmaFinderUtil);
+                                    parserSiteUtil.fork();
+                                    siteModelUtil.updateSiteModel(siteModel, StatusSiteIndex.INDEXING,
+                                            LocalDateTime.now(), lastError.get(siteModel.getId()));
+                                }
                             }
-
-                        }
-                    });
-                } catch (Exception exception) {
-                    log.error(exception.getMessage(), exception);
-                    lastError.put(siteModel.getId(), exception.getMessage());
+                        });
+                    } catch (Exception exception) {
+                        log.error(exception.getMessage(), exception);
+                        lastError.put(siteModel.getId(), exception.getMessage());
+                    }
                 }
             }
-        }
+    }
+
+    private Connection.Response getResponse(String link) throws IOException {
+        return Jsoup.connect(link)
+                .ignoreContentType(true)
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
+                        "Gecko/20100101 Firefox/25.0 Chrome/51.0.2704.106 Safari/537.36 OPR/38.0.2220.41")
+                .referrer("http://www.google.com")
+                .timeout(3000)
+                .ignoreHttpErrors(true)
+                .execute();
+    }
+
+    public void clearQueue() {
+        System.out.println("ОЧЕРЕДЬ ДО? " + queueLinks.size());
+        queueLinks.clear();
+            System.out.println("ОЧЕРЕДЬ ПОСЛЕ? " + queueLinks.size());
+    }
+
+    private boolean isInterrupted() {
+        SiteIndexingServiceImpl siteIndexingService = new SiteIndexingServiceImpl();
+        return siteIndexingService.stopIndexingSite();
     }
 
     private void checkLink(String linkString, String link) {

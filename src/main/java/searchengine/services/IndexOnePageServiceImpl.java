@@ -59,7 +59,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
                 result = false;
             } else {
                 SiteModel siteModel = getSiteModel(webPageUrl, site);
-                log.info("Start indexing single page: " + webPageUrl);
+                log.info("Начало индексации страницы сайта: " + webPageUrl);
                 Connection.Response response = Jsoup.connect(webPageUrl)
                         .ignoreContentType(true)
                         .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
@@ -70,10 +70,9 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
                         .execute();
                 int statusCode = response.statusCode();
                 Document document = response.parse();
-                log.info("End indexing single page: " + webPageUrl);
+                log.info("Индексация страницы завершена успешно: " + webPageUrl);
                 PageModel pageModel = saveNewOrUpdateOldPage(site, document, siteModel, statusCode, webPageUrl);
                 saveNewOrUpdateOldLemma(pageModel, siteModel, document);
-                log.info("Page indexing completed");
                 result = true;
             }
         } catch (IOException e) {
