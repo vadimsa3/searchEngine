@@ -108,7 +108,7 @@ public class ApiController {
                     .body("{\"result\": false, \"error\": \"Задан пустой поисковый запрос\"}");
         } else {
             String jsonResult = searchService.beginSearch(query, site, offset, limit);
-            System.out.println(jsonResult); // потом удалить
+            System.out.println(jsonResult); // !!! УДАЛИТЬ !!!
             return ResponseEntity.status(HttpStatus.OK).body(jsonResult);
         }
     }

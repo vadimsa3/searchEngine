@@ -3,10 +3,13 @@ package test;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import searchengine.repositories.LemmaRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import searchengine.services.SearchServiceImpl;
+import searchengine.services.SiteIndexingServiceImpl;
 import searchengine.utilities.LemmaFinderUtil;
 
 import java.io.IOException;
@@ -14,7 +17,7 @@ import java.util.*;
 
 public class testAll {
 
-    LemmaRepository lemmaRepository;
+    private static final Logger log = LoggerFactory.getLogger(SiteIndexingServiceImpl.class);
 
     @DisplayName("Метод getLemmasMap. Получение из страницы лемм с количеством.")
     @Test
@@ -68,6 +71,27 @@ public class testAll {
         System.out.println("QueryRus " + searchService.checkLanguageInputQuery(queryRus));
         System.out.println("QueryEng " + searchService.checkLanguageInputQuery(queryEng));
         System.out.println("QueryEmpty " + searchService.checkLanguageInputQuery(queryEmpty));
+    }
+
+    @Test
+    void testText() throws IOException {
+        String webPageUrl = "https://tortishnaya.ru/cooperate";
+        Connection.Response response = Jsoup.connect(webPageUrl)
+                .ignoreContentType(true)
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
+                        "Gecko/20100101 Firefox/25.0 Chrome/51.0.2704.106 Safari/537.36 OPR/38.0.2220.41")
+                .referrer("http://www.google.com")
+                .timeout(3000)
+                .ignoreHttpErrors(true)
+                .execute();
+        Document doc = response.parse();
+        String textPageHtml = doc.text();
+        log.info("textPage: " + textPageHtml);
+
+        for (Element headline : doc.getElementsContainingText("начинка")) {
+            log.info(headline.text());
+        }
+
     }
 }
 

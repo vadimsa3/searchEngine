@@ -1,13 +1,12 @@
 package searchengine.utilities;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.Jsoup;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 @Service
 public class WordFinderUtil {
@@ -18,46 +17,40 @@ public class WordFinderUtil {
         lemmaFinderUtil = new LemmaFinderUtil();
     }
 
-    public List<String> getSnippet(String fullContentPage, List<String> lemmas) {
+    public String getSnippet(String fullContentPage, List<String> lemmas) {
         if (lemmas.isEmpty()) {
             return null;
         }
         String onlyTextFromPage = getTextFromFullContentPage(fullContentPage);
-        List<Integer> indexesLemmasInText = getFirstIndexInText(onlyTextFromPage, lemmas);
-        int startSnippet = 0;
-        int endSnippet = 0;
-        int maxLemmas = 0;
-        for (int startIndex : indexesLemmasInText) {
-            int endIndex = startIndex + 200;
-            int nextSpaceIndex = onlyTextFromPage.indexOf(" ", endIndex);
-            if (nextSpaceIndex != -1) {
-                endIndex = nextSpaceIndex;
-            }
-            int currentLemmas = 0;
-            for (String lemma : lemmas) {
-                if (onlyTextFromPage.toLowerCase().substring(startIndex, endIndex).contains(lemma)) {
-                    currentLemmas++;
+        Map<String, Integer> snippetsOnPage = new HashMap<>();
+        for (String lemma : lemmas) {
+            Set<Integer> indexesLemmas = getIndexesLemmaInText(onlyTextFromPage, lemma);
+            for (int startIndex : indexesLemmas) {
+                int endIndex = startIndex + 200;
+                int nextSpaceIndex = onlyTextFromPage.indexOf(" ", endIndex);
+                if (nextSpaceIndex != -1) {
+                    endIndex = nextSpaceIndex;
                 }
-            }
-            if (currentLemmas > maxLemmas) {
-                maxLemmas = currentLemmas;
-                startSnippet = startIndex;
-                endSnippet = endIndex;
+                String resultSnippet = onlyTextFromPage.substring(startIndex, endIndex)
+                        .concat("...");
+                int countSearchLemmasOnPage = 0;
+                countSearchLemmasOnPage += StringUtils.countMatches(onlyTextFromPage, lemma);
+                snippetsOnPage.put(resultSnippet, countSearchLemmasOnPage);
             }
         }
-        String textSnippet = onlyTextFromPage.substring(startSnippet, endSnippet);
-        return getTextSnippetWithSelectLemma(textSnippet, lemmas);
+        return snippetsOnPage.isEmpty()
+                ? null
+                : getTextSnippetWithSelectLemma(snippetsOnPage.entrySet().stream()
+                .max(Map.Entry.comparingByValue()).orElse(null).getKey(), lemmas);
     }
 
-    public List<Integer> getFirstIndexInText(String onlyTextPage, List<String> lemmas) {
+    public Set<Integer> getIndexesLemmaInText(String onlyTextPage, String lemma) {
         String newEditText = onlyTextPage.toLowerCase(Locale.ROOT).replaceAll("([^а-я\\s])", "").trim();
         String[] onlyWordsFromText = newEditText.split("\\s");
-        List<Integer> indexWordInText = new ArrayList<>();
+        Set<Integer> indexWordInText = new HashSet<>();
         for (String word : onlyWordsFromText) {
-            for (String lemma : lemmas) {
-                if (isLemmaInText(lemma, word)) {
-                    indexWordInText.add(onlyTextPage.toLowerCase().indexOf(word));
-                }
+            if (isLemmaInText(lemma, word)) {
+                indexWordInText.add(onlyTextPage.toLowerCase().indexOf(word));
             }
         }
         return indexWordInText;
@@ -88,13 +81,15 @@ public class WordFinderUtil {
         return normalWordForms.get(0).equals(lemma);
     }
 
-    private List<String> getTextSnippetWithSelectLemma(String textSnippet, List<String> lemmas) {
-        List<String> result = new ArrayList<>();
+    private String getTextSnippetWithSelectLemma(String textSnippet, List<String> lemmas) {
+        List<String> listTextSnippetWithLemmaSelect = new ArrayList<>();
+        listTextSnippetWithLemmaSelect.add(textSnippet);
         lemmas.forEach(lemma -> {
-            String textSnippetWithLemmaSelect = textSnippet.toLowerCase()
+            String textSnippetFromList = listTextSnippetWithLemmaSelect.get(0);
+            String textSnippetWithLemmaSelect = textSnippetFromList.toLowerCase()
                     .replaceAll(lemma, "<b> ".concat(lemma).concat(" </b>"));
-            result.add(textSnippetWithLemmaSelect);
+            listTextSnippetWithLemmaSelect.add(0, textSnippetWithLemmaSelect);
         });
-        return result;
+        return listTextSnippetWithLemmaSelect.get(0);
     }
 }

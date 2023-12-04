@@ -43,6 +43,7 @@ public class ParserSiteUtil extends RecursiveAction {
     private final Queue<String> queueLinks;
     private final Set<String> visitedLinks;
     private final Map<Integer, String> lastError;
+
     @Getter
     private String status = null;
 
@@ -64,7 +65,7 @@ public class ParserSiteUtil extends RecursiveAction {
 
     protected void compute() {
         while (true) {
-            String link = queueLinks.poll(); // забираем ссылку из очереди
+            String link = queueLinks.poll();
             if (link == null) {
                 status = "waiting";
                 siteModelUtil.updateSiteModel(siteModel, StatusSiteIndex.INDEXED, LocalDateTime.now(),
@@ -92,10 +93,12 @@ public class ParserSiteUtil extends RecursiveAction {
                     urls.forEach((innerLink) -> {
                         synchronized (queueLinks) {
                             String linkString = innerLink.absUrl("href");
+
                             if (linkString.contains(SiteIndexingServiceImpl.getDomainName())
                                     & !visitedLinks.contains(linkString)
                                     && linkString.startsWith(link)
                                     && !isFile(linkString)) {
+
                                 queueLinks.add(linkString);
                                 ParserSiteUtil parserSiteUtil = new ParserSiteUtil(queueLinks, visitedLinks,
                                         siteRepository, pageRepository, siteModel, lastError, siteModelUtil,
@@ -104,6 +107,7 @@ public class ParserSiteUtil extends RecursiveAction {
                                 siteModelUtil.updateSiteModel(siteModel, StatusSiteIndex.INDEXING,
                                         LocalDateTime.now(), lastError.get(siteModel.getId()));
                             }
+
                         }
                     });
                 } catch (Exception exception) {
@@ -111,6 +115,14 @@ public class ParserSiteUtil extends RecursiveAction {
                     lastError.put(siteModel.getId(), exception.getMessage());
                 }
             }
+        }
+    }
+
+    private void checkLink(String linkString, String link) {
+        if (linkString.contains(SiteIndexingServiceImpl.getDomainName())
+                & !visitedLinks.contains(linkString)
+                && linkString.startsWith(link)
+                && !isFile(linkString)) {
         }
     }
 

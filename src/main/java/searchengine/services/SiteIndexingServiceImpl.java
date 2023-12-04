@@ -112,7 +112,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 
     public void deleteOldDataByUrlSite(String urlSite) {
         List<SiteModel> listModelsToDelete = siteRepository.findSiteModelsByUrl(urlSite);
-        log.info("В репозитории находятся SiteModel с указанным URL - " + listModelsToDelete.size());
+        log.info("В репозитории уже находятся SiteModel с указанным URL - " + listModelsToDelete.size());
         if (!listModelsToDelete.isEmpty()) {
             for (SiteModel siteModelToDelete : listModelsToDelete) {
                 siteRepository.delete(siteModelToDelete);
@@ -134,7 +134,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 
     @Override
     public boolean stopIndexingSite() {
-                                    // !!! поработать над методом
+        // !!! поработать над методом
 //        if (!forkJoinPool.isShutdown()) {
 //            indexingStatus.keySet().forEach(urlSite -> {
 //                Boolean isIndOk = indexingStatus.get(urlSite);
@@ -155,24 +155,24 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 
         if (isIndexing()) {
             forkJoinPool.shutdownNow();
-            System.out.println("IS STOP INDEXING ?" + !forkJoinPool.isShutdown());
+            System.out.println("IS STOP INDEXING ?" + !forkJoinPool.isShutdown()); // !!!!! DELETE !!!!
             queueLinks.clear();
             restartForkJoinPool();
-            log.info("Indexing stopped by user!");
+            log.info("Индексация остановлена пользователем!");
             siteRepository.findAll().forEach(siteModel -> {
                 if (siteModel.getStatusSiteIndex() != StatusSiteIndex.INDEXED) {
                     siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
-                            LocalDateTime.now(), "Indexing stopped by user!");
+                            LocalDateTime.now(), "Индексация остановлена пользователем!");
                 }
             });
             return true;
         } else {
-            log.info("Indexing not stopped! Start indexing process before stopped!");
+            log.info("Индексация не остановлена! Начните индексацию перед остановкой!");
         }
         return false;
     }
 
-        private void restartForkJoinPool () {
-            forkJoinPool = new ForkJoinPool();
-        }
+    private void restartForkJoinPool() {
+        forkJoinPool = new ForkJoinPool();
     }
+}

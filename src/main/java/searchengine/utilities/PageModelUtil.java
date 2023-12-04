@@ -20,16 +20,10 @@ public class PageModelUtil {
                                         SiteModel siteModel, Integer statusCode) throws MalformedURLException {
         PageModel pageModel = new PageModel();
         pageModel.setSiteId(siteModel);
-//        pageModel.setPath(url.substring(siteModel.getUrl().length())); // как вариант
-        pageModel.setPath(getPathForPageFromUrl(url));
+        pageModel.setPath(url.substring(siteModel.getUrl().length()));
         pageModel.setCode(statusCode);
         pageModel.setContent(document.outerHtml());
         pageRepository.save(pageModel);
         return pageModel;
-    }
-
-    public String getPathForPageFromUrl(String url) throws MalformedURLException {
-        URL newUrl = new URL(url);
-        return newUrl.getPath();
     }
 }

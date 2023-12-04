@@ -16,16 +16,10 @@ public class LemmaFinderUtil {
     private static final String WORD_TYPE_REGEX = "\\W\\w&&[^а-яА-Я\\s]";
     private static final String[] particlesNames = new String[]{"МЕЖД", "ПРЕДЛ", "СОЮЗ", "ВВОДН", "ЧАСТ", "МС"};
 
-
     public LemmaFinderUtil() throws IOException {
         luceneMorphology = new RussianLuceneMorphology();
     }
 
-    /**
-     * Метод разделяет текст на слова, находит все леммы и считает их количество.
-     * @param text текст из которого будут выбираться леммы
-     * @return ключ является леммой, а значение количеством найденных лемм
-     */
     public Map<String, Integer> getLemmasMap(String text) {
         String[] words = arrayContainsRussianWords(text);
         HashMap<String, Integer> lemmas = new HashMap<>();
@@ -49,21 +43,6 @@ public class LemmaFinderUtil {
             }
         }
         return lemmas;
-    }
-
-    public Set<String> getUniqueLemmasSet(String text) {
-        String[] textArray = arrayContainsRussianWords(text);
-        Set<String> lemmaSet = new HashSet<>();
-        for (String word : textArray) {
-            if (!word.isEmpty() && isCorrectWordForm(word)) {
-                List<String> wordBaseForms = luceneMorphology.getMorphInfo(word);
-                if (anyWordBaseFormBelongToParticle(wordBaseForms)) {
-                    continue;
-                }
-                lemmaSet.addAll(luceneMorphology.getNormalForms(word));
-            }
-        }
-        return lemmaSet;
     }
 
     public boolean anyWordBaseFormBelongToParticle(List<String> wordBaseForms) {
@@ -94,5 +73,20 @@ public class LemmaFinderUtil {
             }
         }
         return true;
+    }
+
+    public Set<String> getUniqueLemmasSet(String text) {
+        String[] textArray = arrayContainsRussianWords(text);
+        Set<String> lemmaSet = new HashSet<>();
+        for (String word : textArray) {
+            if (!word.isEmpty() && isCorrectWordForm(word)) {
+                List<String> wordBaseForms = luceneMorphology.getMorphInfo(word);
+                if (anyWordBaseFormBelongToParticle(wordBaseForms)) {
+                    continue;
+                }
+                lemmaSet.addAll(luceneMorphology.getNormalForms(word));
+            }
+        }
+        return lemmaSet;
     }
 }

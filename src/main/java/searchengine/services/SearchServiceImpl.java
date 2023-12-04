@@ -53,47 +53,23 @@ public class SearchServiceImpl implements SearchService {
         this.offset = offset;
         this.limitOutputResults = limitOutputResults;
         checkLanguageInputQuery(query);
-
-        /* 1. Разбиваем поисковый запрос на отдельные слова и формируем из этих слов список уникальных лемм,
-        исключая междометия, союзы, предлоги и частицы + добавим их количество*/
         Map<String, Integer> uniqueLemmasFromQuery = lemmaFinderUtil.getLemmasMap(query);
-        System.out.println("СПИСОК ЛЕММ ИЗ ПОИСКОВОГО ЗАПРОСА С КОЛИЧЕСТВОМ :" + uniqueLemmasFromQuery); // удалить
-
-        /* 1.1. По леммам из запроса и сайту, находим все модели-лемм из репозитория*/
-        List<LemmaModel> listLemmaModelsFromRepository = getListLemmaModelsByLemmaFromQuery(uniqueLemmasFromQuery,
+        List<LemmaModel> listLemmaModelsFromRepository = getListLemmaModelsByLemmaFromRepository(uniqueLemmasFromQuery,
                 siteFromQuery);
-
-        /* 1.2. По найденным моделям-леммам, находим все страницы, на которых она встречается.*/
-        /* 2. Исключать из полученного списка леммы, которые встречаются на слишком большом количестве страниц.
-        Поэкспериментируйте и определите этот процент самостоятельно.*/
+        log.info("В репозитории найдено соответствующих запросу лемм: " + listLemmaModelsFromRepository.size());
         Map<Integer, List<PageModel>> mapLemmasAndPages = getPagesByLemmaModel(listLemmaModelsFromRepository);
-
-        /* 3. Сортировать леммы в порядке увеличения частоты встречаемости на страницах (от самых редких до самых частых).
-         сортируем в порядке встречаемости на найденных страницах
-        /*4. По первой, самой редкой лемме из списка, находить все страницы, на которых она встречается и т.д..*/
         Map<Integer, List<PageModel>> sortedMapLemmasByFrequencyOnPages = getSortedLemmasByFrequencyOnPages(mapLemmasAndPages);
-
-        // ищем по репозиторию индексов страницы, соответствующие лемме
-        // сохраняем перечень моделей индексов в set
         List<IndexModel> matchingSearchIndexesModels = getListMatchingIndexes(sortedMapLemmasByFrequencyOnPages);
-
-        /* 5. Если страницы найдены, рассчитывать по каждой из них релевантность (и выводить её потом) и возвращать.*/
         Map<Integer, Double> pageRelevenceMap = calculateMaxPageRelevance(matchingSearchIndexesModels);
-
-        /*6. Список объектов страниц с учетом полученных данных. В т.ч. абсолютной и относительной релевантностей*/
-        List<PageData> pageDataList = setPageData(matchingSearchIndexesModels, sortedMapLemmasByFrequencyOnPages,
+        List<PageData> pageDataList = createPageData(matchingSearchIndexesModels, sortedMapLemmasByFrequencyOnPages,
                 pageRelevenceMap);
-
-        /*7. Сортировать страницы по убыванию релевантности (от большей к меньшей)*/
         pageDataList.sort((pageData1, pageData2) ->
                 Double.compare(pageData2.getRelevance(), pageData1.getRelevance()));
-        // и выдавать в виде списка объектов
         setSearchResult(pageDataList, matchingSearchIndexesModels.size());
         ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.writeValueAsString(searchResult);
     }
 
-    //--------------------------------------------------------------------------------------------------------------
     public Boolean checkLanguageInputQuery(String queryInput) {
         boolean result = true;
         String englishAlphabet = "[a-zA-z]+";
@@ -106,18 +82,15 @@ public class SearchServiceImpl implements SearchService {
                 if (word.matches(englishAlphabet)) {
                     log.warn("Внимание! Необходимо сменить язык ввода на русский.");
                     result = false;
-                } else {
-                    log.info("Поисковый запрос: " + queryInput);
                 }
             }
+            log.info("Поисковый запрос: " + queryInput);
         }
         return result;
     }
 
-    //--------------------------------------------------------------------------------------------------------------
-    /* 1.1. По леммам из запроса, находим все модели лемм из репозитория с учетом модели сайта.*/
-    private List<LemmaModel> getListLemmaModelsByLemmaFromQuery(Map<String, Integer> uniqueLemmasFromQuery,
-                                                                String siteFromQuery) {
+    private List<LemmaModel> getListLemmaModelsByLemmaFromRepository(Map<String, Integer> uniqueLemmasFromQuery,
+                                                                     String siteFromQuery) {
         List<LemmaModel> listLemmaModelsFromRepository = new ArrayList<>();
         for (String lemmaFromListQuery : uniqueLemmasFromQuery.keySet()) {
             if (siteFromQuery == null) {
@@ -132,29 +105,26 @@ public class SearchServiceImpl implements SearchService {
         return listLemmaModelsFromRepository;
     }
 
-    //--------------------------------------------------------------------------------------------------------------
-    /* 1.2. По моделям лемм, находим все страницы, на которых она встречается.
-     * 2. Исключать из полученного списка леммы, которые встречаются на слишком большом количестве страниц.
-     * Оставляем леммы, с встречаемостью менее 60% от общего количества страниц.*/
     private Map<Integer, List<PageModel>> getPagesByLemmaModel(List<LemmaModel> listLemmaModelsFromRepository) {
         Map<Integer, List<PageModel>> mapLemmasAndPages = new LinkedHashMap<>();
         listLemmaModelsFromRepository.forEach(lemmaModel -> {
             List<PageModel> listPageModels = indexRepository.findAllByLemmaId(lemmaModel).stream()
                     .map(IndexModel::getPageId)
                     .collect(Collectors.toList());
-            if (listPageModels.size() < pageRepository.findAll().size() * 60 / 100) {
+            if (listPageModels.size() == pageRepository.findAll().size()) {
+                log.info("Лемма - " + lemmaModel.getLemma() + " - встречается на каждой странице сайта");
                 mapLemmasAndPages.put(lemmaModel.getId(), listPageModels);
-                System.out.println("По моделям лемм, находим все страницы: " + "Lemma - " +
-                        lemmaModel.getLemma() + ". " + "ID Lemma - " + lemmaModel.getId() + ". "
-                        + "Count lemmas - " + " - " + listPageModels.size()); // удалить потом
+            } else {
+                if (listPageModels.size() < pageRepository.findAll().size() * 60 / 100) {
+                    mapLemmasAndPages.put(lemmaModel.getId(), listPageModels);
+                } else {
+                    log.info("Лемма - " + lemmaModel.getLemma() + " - встречается на слишком большом количестве страниц");
+                }
             }
         });
         return mapLemmasAndPages;
     }
 
-    //--------------------------------------------------------------------------------------------------------------
-    /* 3. Сортировать леммы в порядке увеличения частоты встречаемости на страницах (от самых редких до самых частых).
-     * сортируем в порядке встречаемости на найденных страницах*/
     private Map<Integer, List<PageModel>> getSortedLemmasByFrequencyOnPages(Map<Integer,
             List<PageModel>> mapLemmasAndPages) {
         return mapLemmasAndPages.entrySet()
@@ -164,9 +134,6 @@ public class SearchServiceImpl implements SearchService {
                         map.put(entry.getKey(), entry.getValue()), LinkedHashMap::putAll);
     }
 
-    //--------------------------------------------------------------------------------------------------------------
-    /* Ищем по репозиторию индексов страницы, соответствующие лемме из сортированного списка
-    и сохраняем список моделей индексов*/
     private List<IndexModel> getListMatchingIndexes(Map<Integer, List<PageModel>> sortedMapLemmasByFrequencyOnPages) {
         Set<IndexModel> tempMatchingIndexModels = new HashSet<>();
         List<IndexModel> matchingSearchIndexesModels = new ArrayList<>();
@@ -182,35 +149,28 @@ public class SearchServiceImpl implements SearchService {
         return matchingSearchIndexesModels;
     }
 
-    //--------------------------------------------------------------------------------------------------------------
-    /* 5. Если страницы найдены, рассчитывать по каждой из них релевантность*/
     private Map<Integer, Double> calculateMaxPageRelevance(List<IndexModel> matchingSearchIndexesModels) {
         Map<Integer, Double> pageRelevenceMap = new HashMap<>();
         for (IndexModel indexModel : matchingSearchIndexesModels) {
-            double relevanceOnPage = indexModel.getRank(); // получаем релевантность - amount каждой indexModel
+            double relevanceIndexModelOnPage = indexModel.getRank();
             int pageId = indexModel.getPageId().getId();
             if (pageRelevenceMap.containsKey(pageId)) {
                 double currentPageRelevance = pageRelevenceMap.get(pageId);
-                double newPageRelevance = currentPageRelevance + relevanceOnPage;
+                double newPageRelevance = currentPageRelevance + relevanceIndexModelOnPage;
                 pageRelevenceMap.put(pageId, newPageRelevance);
             } else {
-                pageRelevenceMap.put(pageId, relevanceOnPage);
+                pageRelevenceMap.put(pageId, relevanceIndexModelOnPage);
             }
         }
         return pageRelevenceMap;
     }
 
-    //--------------------------------------------------------------------------------------------------------------
-    private List<PageData> setPageData(List<IndexModel> matchingSearchIndexesModels,
-                                       Map<Integer, List<PageModel>> sortedMapLemmasByFrequencyOnPages,
-                                       Map<Integer, Double> pageRelevenceMap) {
+    private List<PageData> createPageData(List<IndexModel> matchingSearchIndexesModels,
+                                          Map<Integer, List<PageModel>> sortedMapLemmasByFrequencyOnPages,
+                                          Map<Integer, Double> pageRelevenceMap) {
         List<PageData> pageDataResult = new ArrayList<>();
         double maxAbsoluteRelevance = Collections.max(pageRelevenceMap.values());
-        /* offset — сдвиг от 0 для постраничного вывода
-        (параметр необязательный, если не установлен, то значение по умолчанию равно нулю)*/
         int startOffset = Math.max(offset != null ? offset : 0, 0);
-        /* limit — количество результатов, которое необходимо вывести
-        (параметр необязательный, если не установлен, то значение по умолчанию равно 20).*/
         int endOffset = Math.min(startOffset + (limitOutputResults != null &&
                 limitOutputResults > 0 ? limitOutputResults : 20), matchingSearchIndexesModels.size());
         Set<Integer> uniquePageId = new HashSet<>();
@@ -219,35 +179,32 @@ public class SearchServiceImpl implements SearchService {
             if (uniquePageId.add(newPageId)) {
                 String site = matchingSearchIndexesModels.get(i).getPageId().getSiteId().getUrl();
                 String siteName = matchingSearchIndexesModels.get(i).getPageId().getSiteId().getName();
-
-                // !!! ЧТО-ТО С АДРЕСОМ
-                String url = matchingSearchIndexesModels.get(i).getPageId().getPath();
-                System.out.println(" ++++ ЧТО-ТО С АДРЕСОМ ++++ " + url); // delete
-
+                String path = matchingSearchIndexesModels.get(i).getPageId().getPath();
+                String urlPage = site.concat(path);
                 String fullContentPage = matchingSearchIndexesModels.get(i).getPageId().getContent();
                 String title = wordFinderUtil.getTitleFromFullContentPage(fullContentPage);
-
                 List<String> lemmas = convertLemmaIdToListLemmas(sortedMapLemmasByFrequencyOnPages);
-
-//                String snippet = wordFinderUtil.getSnippet(fullContentPage, lemmas);
-                List<String> snippet = wordFinderUtil.getSnippet(fullContentPage, lemmas);
-
-                PageData pageData = new PageData();
+                String snippet = wordFinderUtil.getSnippet(fullContentPage, lemmas);
                 double absolutPageRelevance = pageRelevenceMap.getOrDefault(newPageId, 0.0);
-                pageData.setSite(site);
-                pageData.setSiteName(siteName);
-                pageData.setUrl(url);
-                pageData.setTitle(title);
-//                pageData.setSnippet(snippet);
-                pageData.setSnippet(snippet);
-                pageData.setRelevance(absolutPageRelevance / maxAbsoluteRelevance);
-                pageDataResult.add(pageData);
+                pageDataResult.add(setPageData(site, siteName, urlPage, title, snippet,
+                        absolutPageRelevance, maxAbsoluteRelevance));
             }
         }
         return pageDataResult;
     }
 
-    //--------------------------------------------------------------------------------------------------------------
+    private PageData setPageData(String site, String siteName, String urlPage, String title, String snippet,
+                                 Double absolutPageRelevance, Double maxAbsoluteRelevance) {
+        PageData pageData = new PageData();
+        pageData.setSite(site);
+        pageData.setSiteName(siteName);
+        pageData.setUrl(urlPage);
+        pageData.setTitle(title);
+        pageData.setSnippet(snippet);
+        pageData.setRelevance(absolutPageRelevance / maxAbsoluteRelevance);
+        return pageData;
+    }
+
     private List<String> convertLemmaIdToListLemmas(Map<Integer, List<PageModel>> sortedMapLemmasByFrequencyOnPages) {
         List<String> lemmas = new ArrayList<>();
         sortedMapLemmasByFrequencyOnPages.keySet().forEach(lemmaId -> {
@@ -256,11 +213,6 @@ public class SearchServiceImpl implements SearchService {
         return lemmas;
     }
 
-    //--------------------------------------------------------------------------------------------------------------
-    // выдавать в виде списка объектов
-    /*7. Сортировать страницы по убыванию релевантности (от большей к меньшей)*/
-//        pageDataList.sort((pageData1, pageData2) ->
-//            Double.compare(pageData2.getRelevance(), pageData1.getRelevance()));
     private void setSearchResult(List<PageData> pageDataList, int count) {
         searchResult.setData(pageDataList);
         searchResult.setCount(count);

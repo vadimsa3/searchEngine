@@ -48,25 +48,6 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     private static final Logger log = LoggerFactory.getLogger(IndexOnePageServiceImpl.class);
     private String urlSiteFromWebPageUrl;
 
-    /*
-    Проверьте работу индексации на отдельной странице, указав путь к ней в
-    веб-интерфейсе вашего приложения и запустив её индексацию.
-
-    Не забудьте, что при добавлении страницы в базу данных она должна
-    привязываться к записи в таблице site, которая либо уже должна там
-    находиться, либо должна быть создана на основе одного из пунктов
-    списка сайтов в конфигурации вашего приложения.
-
-    ● В случае попытки индексации страницы с какого-то другого сайта
-    команда API должна выдавать ошибку в соответствии с технической
-    спецификацией.
-    Убедитесь в этом в веб-интерфейсе вашего приложения.
-
-    ● В случае, если переданная страница уже была проиндексирована, перед
-    её индексацией необходимо удалить всю информацию о ней из таблиц
-    page, lemma и index.
-     */
-
     @Override
     public boolean indexOnePageByUrl(String webPageUrl) {
         Site site = isListSitesContainsWebPageUrl(webPageUrl);
