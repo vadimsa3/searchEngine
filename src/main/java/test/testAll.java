@@ -8,6 +8,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import searchengine.config.Connector;
+import searchengine.config.Site;
+import searchengine.config.SitesList;
 import searchengine.services.SearchServiceImpl;
 import searchengine.services.SiteIndexingServiceImpl;
 import searchengine.utilities.LemmaFinderUtil;
@@ -18,6 +22,11 @@ import java.util.*;
 public class testAll {
 
     private static final Logger log = LoggerFactory.getLogger(SiteIndexingServiceImpl.class);
+
+    @Autowired
+    private SitesList sitesList;
+    @Autowired
+    private Site site;
 
     @DisplayName("Метод getLemmasMap. Получение из страницы лемм с количеством.")
     @Test

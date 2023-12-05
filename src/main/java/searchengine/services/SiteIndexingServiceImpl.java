@@ -135,8 +135,23 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 
     @Override
     public boolean stopIndexingSite() {
-        return isShutdown();
-
+        if (!forkJoinPool.isShutdown()) {
+            indexingStatus.keySet().forEach(urlSite -> {
+                Boolean isIndexingOk = indexingStatus.get(urlSite);
+                if (!isIndexingOk) {
+                    siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
+                            LocalDateTime.now(), "Индексация остановлена пользователем!");
+                }
+            });
+            forkJoinPool.shutdownNow();
+            queueLinks.clear();             // !!!! надо очищать в parsersiteutil !!!
+            restartForkJoinPool();
+            return true;
+        } else {
+            log.info("Индексация не остановлена! Начните индексацию перед остановкой!");
+        }
+        return false;
+    }
 
 //        log.info("Индексация запущена? " + isIndexing());
 //        try {
@@ -148,12 +163,6 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 //            lastError.put(siteModel.getId(), exception.getMessage());
 //        }
 //        return true;
-    }
-
-    public boolean isShutdown(){
-        return true;
-//        return forkJoinPool.isShutdown();
-    }
 
 
 //                System.out.println("IS STOP INDEXING ?" + !forkJoinPool.isShutdown()); // !!!!! DELETE !!!!
@@ -173,26 +182,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 //            return true;
 //    }
 
-        // !!! поработать над методом
-//        if (!forkJoinPool.isShutdown()) {
-//            indexingStatus.keySet().forEach(urlSite -> {
-//                Boolean isIndOk = indexingStatus.get(urlSite);
-//                if (!isIndOk) {
-//                    siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
-//                            LocalDateTime.now(), "Indexing stopped by user!");
-//                }
-//            });
-//            forkJoinPool.shutdownNow();
-//            queueLinks.clear();
-//            restartForkJoinPool();
-//            return true;
-//        } else {
-//            log.info("Indexing not stopped! Start indexing process before stopped!");
-//        }
-//        return false;
-//    }
-
-//        if (isIndexing()) {
+    //        if (isIndexing()) {
 //            forkJoinPool.shutdownNow();
 //            System.out.println("IS STOP INDEXING ?" + !forkJoinPool.isShutdown()); // !!!!! DELETE !!!!
 //            queueLinks.clear();

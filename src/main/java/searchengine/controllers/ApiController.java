@@ -64,7 +64,7 @@ public class ApiController {
         return isActive
                 ? ResponseEntity.ok().body("{\"result\": true}")
                 : ResponseEntity.badRequest().body("{\"result\": false, \"error\":\""
-                + "Indexing is not running" + "\"}");
+                + "Индексация еще не запущена" + "\"}");
     }
 
     /*Добавление или обновление отдельной страницы — POST /api/indexPage
@@ -108,7 +108,6 @@ public class ApiController {
                     .body("{\"result\": false, \"error\": \"Задан пустой поисковый запрос\"}");
         } else {
             String jsonResult = searchService.beginSearch(query, site, offset, limit);
-            System.out.println(jsonResult); // !!! УДАЛИТЬ !!!
             return ResponseEntity.status(HttpStatus.OK).body(jsonResult);
         }
     }

@@ -15,6 +15,8 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import searchengine.config.Connector;
 import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
 import searchengine.model.StatusSiteIndex;
@@ -40,6 +42,8 @@ public class ParserSiteUtil extends RecursiveAction {
     private LemmaFinderUtil lemmaFinderUtil;
     @Autowired
     private LemmaModelUtil lemmaModelUtil;
+    @Autowired
+    private Connector connector;
 
     private final Queue<String> queueLinks;
     private final Set<String> visitedLinks;
@@ -66,11 +70,11 @@ public class ParserSiteUtil extends RecursiveAction {
 
     protected void compute() {
             while (true) {
-                // !!!!!!!!!!!
-                System.out.println("+++++  queueLinks +++++ " + queueLinks.size());
-                if (isInterrupted()) {
-                    queueLinks.clear();
-                }
+//                // !!!!!!!!!!!
+//                System.out.println("+++++  queueLinks +++++ " + queueLinks.size());
+//                if (isInterrupted()) {
+//                    queueLinks.clear();
+//                }
 
                 String link = queueLinks.poll();
                 if (link == null) {
@@ -117,24 +121,23 @@ public class ParserSiteUtil extends RecursiveAction {
     private Connection.Response getResponse(String link) throws IOException {
         return Jsoup.connect(link)
                 .ignoreContentType(true)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
-                        "Gecko/20100101 Firefox/25.0 Chrome/51.0.2704.106 Safari/537.36 OPR/38.0.2220.41")
-                .referrer("http://www.google.com")
-                .timeout(3000)
+                .userAgent(connector.getUserAgent())
+                .referrer(connector.getReferrer())
+                .timeout(connector.getTimeout())
                 .ignoreHttpErrors(true)
                 .execute();
     }
 
-    public void clearQueue() {
-        System.out.println("ОЧЕРЕДЬ ДО? " + queueLinks.size());
-        queueLinks.clear();
-            System.out.println("ОЧЕРЕДЬ ПОСЛЕ? " + queueLinks.size());
-    }
+//    public void clearQueue() {
+//        System.out.println("ОЧЕРЕДЬ ДО? " + queueLinks.size());
+//        queueLinks.clear();
+//            System.out.println("ОЧЕРЕДЬ ПОСЛЕ? " + queueLinks.size());
+//    }
 
-    private boolean isInterrupted() {
-        SiteIndexingServiceImpl siteIndexingService = new SiteIndexingServiceImpl();
-        return siteIndexingService.stopIndexingSite();
-    }
+//    private boolean isInterrupted() {
+//        SiteIndexingServiceImpl siteIndexingService = new SiteIndexingServiceImpl();
+//        return siteIndexingService.stopIndexingSite();
+//    }
 
     private void checkLink(String linkString, String link) {
         if (linkString.contains(SiteIndexingServiceImpl.getDomainName())

@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.statistics.*;
-import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
 import searchengine.model.StatusSiteIndex;
 import searchengine.repositories.LemmaRepository;
@@ -16,7 +15,6 @@ import searchengine.repositories.SiteRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +51,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             item.setLemmas(siteModel != null ? lemmaRepository.findAllLemmasBySiteId(siteModel).size() : 0);
             item.setStatusTime(siteModel != null ? siteModel.getStatusTime() : LocalDateTime.now());
             item.setError(siteModel != null ? (siteModel.getLastError() != null ? siteModel.getLastError()
-                    : "No errors found!") : "Site not yet been indexed!");
+                    : "Ошибок индексации не найдено!") : "Сайт еще не проиндексирован!");
             long allPages = pageRepository.count();
             total.setPages(allPages);
             long allLemmas = lemmaRepository.count();
