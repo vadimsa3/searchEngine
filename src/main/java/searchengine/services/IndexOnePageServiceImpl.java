@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import searchengine.config.Connector;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.model.LemmaModel;
@@ -45,8 +44,6 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
     private IndexModelUtil indexModelUtil;
     @Autowired
     private SiteModelUtil siteModelUtil;
-    @Autowired
-    private Connector connector;
 
     private static final Logger log = LoggerFactory.getLogger(IndexOnePageServiceImpl.class);
     private String urlSiteFromWebPageUrl;
@@ -64,12 +61,13 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
                 SiteModel siteModel = getSiteModel(webPageUrl, site);
                 log.info("Начало индексации страницы сайта: " + webPageUrl);
                 Connection.Response response = Jsoup.connect(webPageUrl)
-                        .ignoreContentType(true)
-                        .userAgent(connector.getUserAgent())
-                        .referrer(connector.getReferrer())
-                        .timeout(connector.getTimeout())
-                        .ignoreHttpErrors(true)
-                        .execute();
+                             .ignoreContentType(true)
+                            .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
+                                    "Gecko/20100101 Firefox/25.0 Chrome/51.0.2704.106 Safari/537.36 OPR/38.0.2220.41")
+                            .referrer("http://google.com")
+                            .timeout(3000)
+                            .ignoreHttpErrors(true)
+                            .execute();
                 int statusCode = response.statusCode();
                 Document document = response.parse();
                 log.info("Индексация страницы завершена успешно: " + webPageUrl);

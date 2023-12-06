@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import searchengine.config.Connector;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.services.SearchServiceImpl;
@@ -100,7 +99,6 @@ public class testAll {
         for (Element headline : doc.getElementsContainingText("начинка")) {
             log.info(headline.text());
         }
-
     }
 }
 
