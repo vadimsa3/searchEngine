@@ -66,10 +66,6 @@ public class ParserSiteUtil extends RecursiveAction {
 
     protected void compute() {
         while (true) {
-//                System.out.println("+++++  queueLinks +++++ " + queueLinks.size());
-//                if (isInterrupted()) {
-//                    queueLinks.clear();
-//                }
             String link = queueLinks.poll();
             if (link == null) {
                 status = "waiting";
@@ -109,14 +105,12 @@ public class ParserSiteUtil extends RecursiveAction {
         }
     }
 
-//    public void clearQueue() {
-//        System.out.println("ОЧЕРЕДЬ ДО? " + queueLinks.size());
-//        queueLinks.clear();
-//            System.out.println("ОЧЕРЕДЬ ПОСЛЕ? " + queueLinks.size());
-//    }
+    public void clearQueue() {
+        System.out.println("ОЧЕРЕДЬ ДО ? " + queueLinks.size());
+        queueLinks.clear();
+    }
 
 //    private boolean isInterrupted() {
-//        SiteIndexingServiceImpl siteIndexingService = new SiteIndexingServiceImpl();
 //        return siteIndexingService.stopIndexingSite();
 //    }
 
@@ -128,7 +122,7 @@ public class ParserSiteUtil extends RecursiveAction {
     }
 
     private static boolean isFile(String link) {
-        String reg = "([^\\s]+(\\.(?i)(jpg|jpeg|png|gif|bmp|pdf))$)";
+        String reg = "([^\\s]+(\\.(?i)(jpg|jpeg|png|gif|bmp|pdf|zip|jar|ppt|pptx))$)";
         return link.matches(reg);
     }
 

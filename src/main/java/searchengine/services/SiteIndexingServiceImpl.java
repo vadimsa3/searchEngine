@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.Getter;
 import org.slf4j.Logger;
@@ -48,8 +49,10 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     private static final HashMap<Integer, String> lastError = new HashMap<>();
     private SiteModel siteModel;
     private Boolean isInterrupted = null;
-    private Boolean isThreadsRunning = null;
+    private Boolean isUnsuccessfulResult = null;
     private final Map<String, Boolean> indexingStatus;
+
+    AtomicBoolean isIndexingStart = new AtomicBoolean(false);
 
     public SiteIndexingServiceImpl() {
         forkJoinPool = new ForkJoinPool();
@@ -57,15 +60,14 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     }
 
     public boolean startIndexingSite() {
-        isThreadsRunning = true;
         sitesList.getSites().forEach((site) -> {
             indexingStatus.put(site.getUrl(), false);
             deleteOldDataByUrlSite(site.getUrl());
             siteModel = siteModelUtil.createNewSiteModel(site, StatusSiteIndex.INDEXING);
             log.info("Запущена индексация сайта: " + site.getUrl());
-            isThreadsRunning = startParsingSite(site.getUrl());
-
-            if (isThreadsRunning = false) {
+            isUnsuccessfulResult = startParsingSite(site.getUrl());
+            log.info("Результат индексации неуспешный ? - " + isUnsuccessfulResult); // false - OK
+            if (isUnsuccessfulResult) {
                 siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
                         LocalDateTime.now(), "Ошибка индексации сайта");
                 indexingStatus.put(site.getUrl(), false);
@@ -76,7 +78,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
                 log.info("Страниц на сайте - " + siteModel.getName() + " - " + countPagesBySiteId(siteModel));
             }
         });
-        return isThreadsRunning;
+        return isUnsuccessfulResult;
     }
 
     public boolean startParsingSite(String url) {
@@ -89,6 +91,9 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
                     pageRepository, siteModel, lastError, siteModelUtil, pageModelUtil, lemmaModelUtil, lemmaFinderUtil);
             taskListLinkParsers.add(parser);
         }
+
+System.out.println("CHECKING forkJoinPool.isShutdown() ? - " + forkJoinPool.isShutdown()); // true if Shutdown - DELETE
+
         if (!forkJoinPool.isShutdown()) {
             taskListLinkParsers.forEach(forkJoinPool::invoke);
             taskListLinkParsers.forEach(parserSiteUtil -> {
@@ -102,6 +107,7 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
             });
             return false;
         } else {
+            log.warn("Ошибка индексации");
             return true;
         }
     }
@@ -123,34 +129,87 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 
     @Override
     public boolean isIndexing() {
-        List<SiteModel> list = new ArrayList<>();
+        List<SiteModel> listOfIndexedSites = new ArrayList<>();
         siteRepository.findAll().forEach(siteModel -> {
             if (siteModel.getStatusSiteIndex() == StatusSiteIndex.INDEXING) {
-                list.add(siteModel);
+                listOfIndexedSites.add(siteModel);
+                System.out.println(" !!!!!!!! Status - " + siteModel.getStatusSiteIndex()); // DELETE
             }
         });
-        return !list.isEmpty();
+        System.out.println("isIndexing() ? Число индексируемых сайтов - " + listOfIndexedSites.size()); // DELETE
+        return !listOfIndexedSites.isEmpty();
     }
 
     @Override
     public boolean stopIndexingSite() {
-        if (!forkJoinPool.isShutdown()) {
-            indexingStatus.keySet().forEach(urlSite -> {
-                Boolean isIndexingOk = indexingStatus.get(urlSite);
-                if (!isIndexingOk) {
-                    siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
-                            LocalDateTime.now(), "Индексация остановлена пользователем!");
-                }
-            });
-            forkJoinPool.shutdownNow();
-            queueLinks.clear();             // !!!! надо очищать в parsersiteutil !!!
-            restartForkJoinPool();
-            return true;
-        } else {
-            log.info("Индексация не остановлена! Начните индексацию перед остановкой!");
-        }
+        System.out.println(" !!!!!! START STOP !!!!!! "); // DELETE
+        System.out.println("+++++ listOfIndexedSites.is NOT Empty() ? - " + isIndexing()); // DELETE
+            if (isIndexing()) {
+                siteRepository.findAll().forEach(siteModel -> {
+                    if (siteModel.getStatusSiteIndex() == StatusSiteIndex.INDEXING) {
+                        System.out.println(" ***** STATUS BEFOR - " +
+                                siteModel.getName() + "-" + siteModel.getStatusSiteIndex()); // DELETE
+                        siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
+                                LocalDateTime.now(), "Индексация остановлена пользователем!");
+                        System.out.println(" ***** STATUS NOW - " +
+                                siteModel.getName() + "-" + siteModel.getStatusSiteIndex()); // DELETE
+                    }
+                });
+                forkJoinPool.shutdownNow();
+                System.out.println("STOP INDEXING forkJoinPool ? - " + forkJoinPool.isShutdown()); // true if Shutdow
+                System.out.println("+++ queueLinks BEFOR ? - " + queueLinks.size()); // DELETE
+                queueLinks.clear();
+                System.out.println("+++ queueLinks AFTER STOP ? - " + queueLinks.size()); // DELETE
+                log.warn("Индексация остановлена пользователем!");
+                return true;
+            } else {
+                log.info("Начните индексацию перед остановкой!");
+            }
         return false;
     }
+
+//        siteRepository.findAll().forEach(siteModel -> {
+//            if (siteModel.getStatusSiteIndex().equals(StatusSiteIndex.INDEXING)) {
+//                isIndexingStart.set(true);
+//            }
+//        });
+//        if (!isIndexingStart.get()) {
+//            log.info("Индексация не остановлена т.к. не запущена! Начните индексацию перед остановкой!");
+//            return false;
+//        }
+//        forkJoinPool.shutdownNow();
+//        siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
+//                LocalDateTime.now(), "Индексация остановлена пользователем!");
+//        return true;
+//    }
+//        forkJoinPool.shutdownNow();
+//        siteRepository.findAll().forEach(siteModel -> {
+//            siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
+//                    LocalDateTime.now(), "Индексация остановлена пользователем!");
+//        });
+//        queueLinks.clear();             // !!!! надо очищать в parsersiteutil !!!
+//        return false;
+//    }
+
+// !!!!!!!!!!!!!!!!!!!!!!
+//        if (!forkJoinPool.isShutdown()) {
+//            indexingStatus.keySet().forEach(urlSite -> {
+//                Boolean isIndexingOk = indexingStatus.get(urlSite);
+//                if (!isIndexingOk) {
+//                    siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
+//                            LocalDateTime.now(), "Индексация остановлена пользователем!");
+//                }
+//            });
+//            forkJoinPool.shutdownNow();
+////            queueLinks.clear();             // !!!! надо очищать в parsersiteutil !!!
+//            return true;
+//        } else {
+//            log.info("Индексация не остановлена! Начните индексацию перед остановкой!");
+//        }
+//        return false;
+//    }
+
+
 
 //        log.info("Индексация запущена? " + isIndexing());
 //        try {

@@ -18,8 +18,7 @@ public class SiteModelUtil {
         SiteModel siteModel = new SiteModel();
         siteModel.setStatusSiteIndex(statusSiteIndex);
         siteModel.setStatusTime(LocalDateTime.now());
-        siteModel.setLastError("lastError.get(siteModel.getId())"); // !!! ИСПРАВИТЬ !!!
-        // last_error TEXT — текст ошибки индексации или NULL, если её не было;
+        siteModel.setLastError(null);
         siteModel.setUrl(site.getUrl());
         siteModel.setName(site.getName());
         siteRepository.save(siteModel);

@@ -47,10 +47,10 @@ public class ApiController {
     */
     @GetMapping("/startIndexing")
     public ResponseEntity<?> startIndexing() throws IOException {
-        boolean isIndexing = siteIndexingService.startIndexingSite();
-        return !isIndexing
+        boolean isUnsuccessfulResult = siteIndexingService.startIndexingSite();
+        return isUnsuccessfulResult
                 ? ResponseEntity.badRequest().body("{\"result\": false, \"error\":\""
-                + "Indexing has already started" + "\"}")
+                + "Индексация уже запущена" + "\"}")
                 : ResponseEntity.ok().body("{\"result\": true}");
     }
 
@@ -74,7 +74,6 @@ public class ApiController {
     * */
     @PostMapping("/indexPage")
     public ResponseEntity<?> indexPage(@RequestParam("url") String url) throws IOException {
-        System.out.println("Начало индексации одной страницы - потом стереть из контроллера " + url); // потом убрать
         boolean isCorrect = indexOnePageService.indexOnePageByUrl(url);
         String errorMessage = "Данная страница находится за пределами сайтов," +
                 "указанных в конфигурационном файле";

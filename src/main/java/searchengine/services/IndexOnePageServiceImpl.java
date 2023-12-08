@@ -61,7 +61,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
                 SiteModel siteModel = getSiteModel(webPageUrl, site);
                 log.info("Начало индексации страницы сайта: " + webPageUrl);
                 Connection.Response response = Jsoup.connect(webPageUrl)
-                             .ignoreContentType(true)
+                            .ignoreContentType(true)
                             .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
                                     "Gecko/20100101 Firefox/25.0 Chrome/51.0.2704.106 Safari/537.36 OPR/38.0.2220.41")
                             .referrer("http://google.com")
