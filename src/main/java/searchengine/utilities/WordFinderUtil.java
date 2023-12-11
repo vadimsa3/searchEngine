@@ -1,9 +1,12 @@
 package searchengine.utilities;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.morphology.LuceneMorphology;
+import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.nodes.Document;
 import org.jsoup.Jsoup;
 import org.springframework.stereotype.Service;
+import searchengine.model.LemmaModel;
 
 import java.io.IOException;
 import java.util.*;
@@ -61,7 +64,7 @@ public class WordFinderUtil {
         return document.title();
     }
 
-    private String getTextFromFullContentPage(String html) {
+    public String getTextFromFullContentPage(String html) {
         Document document = Jsoup.parse(html);
         return document.text();
     }
@@ -81,7 +84,7 @@ public class WordFinderUtil {
         return normalWordForms.get(0).equals(lemma);
     }
 
-    private String getTextSnippetWithSelectLemma(String textSnippet, List<String> lemmas) {
+    public String getTextSnippetWithSelectLemma(String textSnippet, List<String> lemmas) {
         List<String> listTextSnippetWithLemmaSelect = new ArrayList<>();
         listTextSnippetWithLemmaSelect.add(textSnippet);
         lemmas.forEach(lemma -> {

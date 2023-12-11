@@ -105,15 +105,6 @@ public class ParserSiteUtil extends RecursiveAction {
         }
     }
 
-    public void clearQueue() {
-        System.out.println("ОЧЕРЕДЬ ДО ? " + queueLinks.size());
-        queueLinks.clear();
-    }
-
-//    private boolean isInterrupted() {
-//        return siteIndexingService.stopIndexingSite();
-//    }
-
     private boolean checkLink(String linkString, String link) {
         return linkString.contains(SiteIndexingServiceImpl.getDomainName())
                 & !visitedLinks.contains(linkString)
