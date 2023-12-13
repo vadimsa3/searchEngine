@@ -110,6 +110,7 @@ public class ParserSiteUtil extends RecursiveAction {
                 & !visitedLinks.contains(linkString)
                 && linkString.startsWith(link)
                 && !isFile(linkString);
+//                && !linkString.contains("#");
     }
 
     private static boolean isFile(String link) {

@@ -1,12 +1,12 @@
 package searchengine.utilities;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.lucene.morphology.LuceneMorphology;
-import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.nodes.Document;
 import org.jsoup.Jsoup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import searchengine.model.LemmaModel;
+import searchengine.services.SearchServiceImpl;
 
 import java.io.IOException;
 import java.util.*;
@@ -20,13 +20,15 @@ public class WordFinderUtil {
         lemmaFinderUtil = new LemmaFinderUtil();
     }
 
-    public String getSnippet(String fullContentPage, List<String> lemmas) {
-        if (lemmas.isEmpty()) {
+    Queue<String> queueSnippets = new LinkedList<>();
+
+    public String getSnippet(String fullContentPage, List<String> requestList) {
+        if (requestList.isEmpty()) {
             return null;
         }
         String onlyTextFromPage = getTextFromFullContentPage(fullContentPage);
         Map<String, Integer> snippetsOnPage = new HashMap<>();
-        for (String lemma : lemmas) {
+        for (String lemma : requestList) {
             Set<Integer> indexesLemmas = getIndexesLemmaInText(onlyTextFromPage, lemma);
             for (int startIndex : indexesLemmas) {
                 int endIndex = startIndex + 200;
@@ -44,7 +46,7 @@ public class WordFinderUtil {
         return snippetsOnPage.isEmpty()
                 ? null
                 : getTextSnippetWithSelectLemma(snippetsOnPage.entrySet().stream()
-                .max(Map.Entry.comparingByValue()).orElse(null).getKey(), lemmas);
+                .max(Map.Entry.comparingByValue()).orElse(null).getKey().toLowerCase(), requestList);
     }
 
     public Set<Integer> getIndexesLemmaInText(String onlyTextPage, String lemma) {
@@ -84,15 +86,14 @@ public class WordFinderUtil {
         return normalWordForms.get(0).equals(lemma);
     }
 
-    public String getTextSnippetWithSelectLemma(String textSnippet, List<String> lemmas) {
-        List<String> listTextSnippetWithLemmaSelect = new ArrayList<>();
-        listTextSnippetWithLemmaSelect.add(textSnippet);
-        lemmas.forEach(lemma -> {
-            String textSnippetFromList = listTextSnippetWithLemmaSelect.get(0);
-            String textSnippetWithLemmaSelect = textSnippetFromList.toLowerCase()
-                    .replaceAll(lemma, "<b> ".concat(lemma).concat(" </b>"));
-            listTextSnippetWithLemmaSelect.add(0, textSnippetWithLemmaSelect);
+    public String getTextSnippetWithSelectLemma(String newSortedSnippets, List<String> requestList) {
+        queueSnippets.clear();
+        queueSnippets.add(newSortedSnippets);
+        requestList.forEach(searchLemma -> {
+            String queueSnippet = queueSnippets.poll();
+            assert queueSnippet != null;
+            queueSnippets.add(queueSnippet.replaceAll(searchLemma, "<b> ".concat(searchLemma).concat(" </b>")));
         });
-        return listTextSnippetWithLemmaSelect.get(0);
+        return queueSnippets.poll();
     }
 }

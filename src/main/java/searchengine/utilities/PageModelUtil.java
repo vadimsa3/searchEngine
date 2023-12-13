@@ -17,7 +17,7 @@ public class PageModelUtil {
     private PageRepository pageRepository;
 
     public PageModel createNewPageModel(String url, Document document,
-                                        SiteModel siteModel, Integer statusCode) throws MalformedURLException {
+                                        SiteModel siteModel, Integer statusCode) {
         PageModel pageModel = new PageModel();
         pageModel.setSiteId(siteModel);
         pageModel.setPath(url.substring(siteModel.getUrl().length()));

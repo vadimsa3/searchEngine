@@ -52,8 +52,6 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     private Boolean isUnsuccessfulResult = null;
     private final Map<String, Boolean> indexingStatus;
 
-    AtomicBoolean isIndexingStart = new AtomicBoolean(false);
-
     public SiteIndexingServiceImpl() {
         forkJoinPool = new ForkJoinPool();
         indexingStatus = new HashMap<>();

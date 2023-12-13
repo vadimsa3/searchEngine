@@ -179,26 +179,25 @@ public class SearchServiceImpl implements SearchService {
             if (uniquePageId.add(newPageId)) {
                 String site = matchingSearchIndexesModels.get(i).getPageId().getSiteId().getUrl();
                 String siteName = matchingSearchIndexesModels.get(i).getPageId().getSiteId().getName();
-                String path = matchingSearchIndexesModels.get(i).getPageId().getPath();
-                String urlPage = site.concat(path);
+                String uriPage = matchingSearchIndexesModels.get(i).getPageId().getPath();
                 String fullContentPage = matchingSearchIndexesModels.get(i).getPageId().getContent();
                 String title = wordFinderUtil.getTitleFromFullContentPage(fullContentPage);
                 List<String> lemmas = convertLemmaIdToListLemmas(sortedMapLemmasByFrequencyOnPages);
                 String snippet = wordFinderUtil.getSnippet(fullContentPage, lemmas);
                 double absolutPageRelevance = pageRelevenceMap.getOrDefault(newPageId, 0.0);
-                pageDataResult.add(setPageData(site, siteName, urlPage, title, snippet,
+                pageDataResult.add(setPageData(site, siteName, uriPage, title, snippet,
                         absolutPageRelevance, maxAbsoluteRelevance));
             }
         }
         return pageDataResult;
     }
 
-    private PageData setPageData(String site, String siteName, String urlPage, String title, String snippet,
+    private PageData setPageData(String site, String siteName, String uri, String title, String snippet,
                                  Double absolutPageRelevance, Double maxAbsoluteRelevance) {
         PageData pageData = new PageData();
         pageData.setSite(site);
         pageData.setSiteName(siteName);
-        pageData.setUrl(urlPage);
+        pageData.setUri(uri);
         pageData.setTitle(title);
         pageData.setSnippet(snippet);
         pageData.setRelevance(absolutPageRelevance / maxAbsoluteRelevance);
