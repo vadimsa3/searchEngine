@@ -12,4 +12,5 @@ public interface PageRepository extends CrudRepository<PageModel, Integer> {
     PageModel findByPath(String path);
     List<PageModel> findAllPagesBySiteId(SiteModel siteModel);
     List<PageModel> findAll();
+    List<PageModel> findAllPagesByContent(String content);
 }

@@ -12,10 +12,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
+import searchengine.model.PageModel;
+import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.SearchServiceImpl;
 import searchengine.services.SiteIndexingServiceImpl;
 import searchengine.utilities.LemmaFinderUtil;
+import searchengine.utilities.ParserSiteUtil;
 import searchengine.utilities.WordFinderUtil;
 
 import java.io.IOException;

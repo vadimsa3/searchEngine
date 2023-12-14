@@ -2,6 +2,7 @@ package searchengine.utilities;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -80,8 +81,11 @@ public class ParserSiteUtil extends RecursiveAction {
                 try {
                     int statusCode = getResponse(link).statusCode();
                     Document document = getResponse(link).parse();
-                    PageModel pageModel = pageModelUtil.createNewPageModel(link, document, siteModel, statusCode);
-                    lemmaModelUtil.createNewLemmaModel(pageModel, siteModel);
+                    String content = document.outerHtml();
+                    if (checkUniquePagesContent(content)) {
+                        PageModel pageModel = pageModelUtil.createNewPageModel(link, content, siteModel, statusCode);
+                        lemmaModelUtil.createNewLemmaModel(pageModel, siteModel);
+                    }
                     Elements urls = document.getElementsByTag("a");
                     urls.forEach((innerLink) -> {
                         synchronized (queueLinks) {
@@ -109,8 +113,8 @@ public class ParserSiteUtil extends RecursiveAction {
         return linkString.contains(SiteIndexingServiceImpl.getDomainName())
                 & !visitedLinks.contains(linkString)
                 && linkString.startsWith(link)
-                && !isFile(linkString);
-//                && !linkString.contains("#");
+                && !isFile(linkString)
+                && !linkString.contains("#");
     }
 
     private static boolean isFile(String link) {
@@ -127,5 +131,10 @@ public class ParserSiteUtil extends RecursiveAction {
                 .timeout(3000)
                 .ignoreHttpErrors(true)
                 .execute();
+    }
+
+    public boolean checkUniquePagesContent(String content) {
+        List<PageModel> allPageModels = pageRepository.findAllPagesByContent(content);
+        return allPageModels.isEmpty();
     }
 }

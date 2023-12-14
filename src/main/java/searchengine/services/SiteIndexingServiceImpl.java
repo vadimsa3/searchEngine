@@ -5,7 +5,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.Getter;
 import org.slf4j.Logger;
@@ -48,7 +47,6 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
     private static final Queue<String> queueLinks = new ConcurrentLinkedQueue<>();
     private static final HashMap<Integer, String> lastError = new HashMap<>();
     private SiteModel siteModel;
-    private Boolean isInterrupted = null;
     private Boolean isUnsuccessfulResult = null;
     private final Map<String, Boolean> indexingStatus;
 
@@ -134,20 +132,20 @@ public class SiteIndexingServiceImpl implements SiteIndexingService {
 
     @Override
     public boolean stopIndexingSite() {
-            if (isIndexing()) {
-                siteRepository.findAll().forEach(siteModel -> {
-                    if (siteModel.getStatusSiteIndex() == StatusSiteIndex.INDEXING) {
-                        siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
-                                LocalDateTime.now(), "Индексация остановлена пользователем!");
-                    }
-                });
-                forkJoinPool.shutdownNow();
-                queueLinks.clear();
-                log.warn("Индексация остановлена пользователем!");
-                return true;
-            } else {
-                log.info("Начните индексацию перед остановкой!");
-            }
+        if (isIndexing()) {
+            siteRepository.findAll().forEach(siteModel -> {
+                if (siteModel.getStatusSiteIndex() == StatusSiteIndex.INDEXING) {
+                    siteModelUtil.updateStatusSiteModelToFailed(siteModel, StatusSiteIndex.FAILED,
+                            LocalDateTime.now(), "Индексация остановлена пользователем!");
+                }
+            });
+            forkJoinPool.shutdownNow();
+            queueLinks.clear();
+            log.warn("Индексация остановлена пользователем!");
+            return true;
+        } else {
+            log.info("Начните индексацию перед остановкой!");
+        }
         return false;
     }
 }

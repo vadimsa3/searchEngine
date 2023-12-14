@@ -13,7 +13,7 @@ public class IndexModelUtil {
     @Autowired
     private IndexRepository indexRepository;
 
-    public void createIndexModel(PageModel pageModel, LemmaModel lemmaModel, int count){
+    public void createIndexModel(PageModel pageModel, LemmaModel lemmaModel, int count) {
         IndexModel indexModel = new IndexModel();
         indexModel.setPageId(pageModel);
         indexModel.setLemmaId(lemmaModel);

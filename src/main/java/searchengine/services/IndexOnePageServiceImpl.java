@@ -61,17 +61,18 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
                 SiteModel siteModel = getSiteModel(webPageUrl, site);
                 log.info("Начало индексации страницы сайта: " + webPageUrl);
                 Connection.Response response = Jsoup.connect(webPageUrl)
-                            .ignoreContentType(true)
-                            .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
-                                    "Gecko/20100101 Firefox/25.0 Chrome/51.0.2704.106 Safari/537.36 OPR/38.0.2220.41")
-                            .referrer("http://google.com")
-                            .timeout(3000)
-                            .ignoreHttpErrors(true)
-                            .execute();
+                        .ignoreContentType(true)
+                        .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:25.0) " +
+                                "Gecko/20100101 Firefox/25.0 Chrome/51.0.2704.106 Safari/537.36 OPR/38.0.2220.41")
+                        .referrer("http://google.com")
+                        .timeout(3000)
+                        .ignoreHttpErrors(true)
+                        .execute();
                 int statusCode = response.statusCode();
                 Document document = response.parse();
+                String content = document.outerHtml();
                 log.info("Индексация страницы завершена успешно: " + webPageUrl);
-                PageModel pageModel = saveNewOrUpdateOldPage(site, document, siteModel, statusCode, webPageUrl);
+                PageModel pageModel = saveNewOrUpdateOldPage(site, content, siteModel, statusCode, webPageUrl);
                 saveNewOrUpdateOldLemma(pageModel, siteModel, document);
                 result = true;
             }
@@ -134,7 +135,7 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
         return pageRepository.findByPath(path);
     }
 
-    public PageModel saveNewOrUpdateOldPage(Site site, Document document, SiteModel siteModel,
+    public PageModel saveNewOrUpdateOldPage(Site site, String content, SiteModel siteModel,
                                             Integer statusCode, String webPageUrl) throws MalformedURLException {
         String path = webPageUrl.replaceAll(site.getUrl(), "");
         PageModel pageModel = isPageRepositoryContainsPageModel(webPageUrl, siteModel);
@@ -142,11 +143,11 @@ public class IndexOnePageServiceImpl implements IndexOnePageService {
             pageModel.setSiteId(siteModel);
             pageModel.setPath(path);
             pageModel.setCode(statusCode);
-            pageModel.setContent(document.outerHtml());
+            pageModel.setContent(content);
             pageRepository.save(pageModel);
             return pageModel;
         } else {
-            return pageModelUtil.createNewPageModel(webPageUrl, document, siteModel, statusCode);
+            return pageModelUtil.createNewPageModel(webPageUrl, content, siteModel, statusCode);
         }
     }
 

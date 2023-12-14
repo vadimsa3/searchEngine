@@ -3,10 +3,7 @@ package searchengine.utilities;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.Jsoup;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import searchengine.services.SearchServiceImpl;
 
 import java.io.IOException;
 import java.util.*;
@@ -16,11 +13,11 @@ public class WordFinderUtil {
 
     private final LemmaFinderUtil lemmaFinderUtil;
 
+    Queue<String> queueSnippets = new LinkedList<>();
+
     public WordFinderUtil() throws IOException {
         lemmaFinderUtil = new LemmaFinderUtil();
     }
-
-    Queue<String> queueSnippets = new LinkedList<>();
 
     public String getSnippet(String fullContentPage, List<String> requestList) {
         if (requestList.isEmpty()) {
