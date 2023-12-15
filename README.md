@@ -52,8 +52,6 @@ git clone https://github.com/vadimsa3/searchengine/
   jdbc:mysql://localhost:3306/your_database_name?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true&useUnicode=true&character_set_server=utf8mb4
 * Введите URL-адреса и названия сайтов для проведения их индексации.
 
-**5. Настройте Ваш файл конфигурации application.yaml.**  
-
 <a name="запуск_и_работа"></a>  
 ## **ЗАПУСК И РАБОТА ПРИЛОЖЕНИЯ** ##
 
