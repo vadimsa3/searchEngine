@@ -57,7 +57,7 @@ git clone https://github.com/vadimsa3/searchengine/
 
 1. Откройте стартовую страницу поисковой системы в Вашем браузере — http://localhost:8080.
    
-3. Перейдите на вкладку «MANAGEMENT» и нажмите кнопку «Start indexing».
+3. Перейдите во вкладку «MANAGEMENT» и нажмите кнопку «Start indexing».
    ![Изображение](https://github.com/vadimsa3/searchengine/blob/master/src/main/resources/raw/start_indexing.jpg "Начало") 
    Начнется индексация сайтов, перечисленных в конфигурационном файле.
    Возможна индексация отдельной страницы сайта из сайтов конфигурационного файла.  
