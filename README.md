@@ -46,7 +46,7 @@ git clone https://github.com/vadimsa3/searchengine/
 
 * Откорректируйте имя пользователя (username) и пароль (password) для подключения к Вашей базе данных с соответствующими правами доступа.
 * Внесите наименование Вашей базы данных в:  
-* jdbc:mysql://localhost:3306/your_database_name?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true&useUnicode=true&character_set_server=utf8mb4
+  jdbc:mysql://localhost:3306/your_database_name?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true&useUnicode=true&character_set_server=utf8mb4
 * Введите URL-адреса и названия сайтов для проведения их индексации.
 
 **5. Настройте Ваш файл конфигурации application.yaml.**  
