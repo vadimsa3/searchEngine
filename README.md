@@ -63,8 +63,7 @@ git clone https://github.com/vadimsa3/searchengine/
    ![Изображение](https://github.com/vadimsa3/searchengine/blob/master/src/main/resources/raw/start_indexing.jpg "Начало") 
    Начнется индексация сайтов, перечисленных в конфигурационном файле.
    Возможна индексация отдельной страницы сайта из сайтов конфигурационного файла.  
-   ***ВНИМАНИЕ! При запуске полной индексации сайтов все данные из базы будут удалены!***
-   ![](https://img.shields.io/badge/ВНИМАНИЕ!%20the%20message-E64751)
+   ![](https://img.shields.io/badge/ВНИМАНИЕ!-FF0000) ***При запуске полной индексации сайтов все данные из базы будут удалены!***  
 
 5. Результаты проведенной индексации, а также процесс ее выполнения отображаются во вкладке "DASHBOARD".
    ![Изображение](https://github.com/vadimsa3/searchengine/blob/master/src/main/resources/raw/indexing.png "Индексация")  
