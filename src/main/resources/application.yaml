@@ -19,5 +19,5 @@ indexing-settings:
     - url: https://art-kvartal.art
       name: Арт Квартал
 
-#    - url: https://www.svetlovka.ru
-#      name: Светловка
+    - url: https://www.svetlovka.ru
+      name: Светловка

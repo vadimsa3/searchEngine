@@ -84,7 +84,6 @@ public class WordFinderUtil {
     }
 
     public String getTextSnippetWithSelectLemma(String newSortedSnippets, List<String> requestList) {
-        System.out.println(requestList);
         queueSnippets.add(newSortedSnippets);
         requestList.forEach(searchLemma -> {
             String queueSnippet = queueSnippets.poll();

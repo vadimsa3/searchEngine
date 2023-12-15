@@ -75,7 +75,7 @@ public class ApiController {
         }
         String jsonResult = searchService.beginSearch(query, site, offset, limit);
         if (jsonResult == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("{\"result\": false, \"error\": \"Результаты по запросу не найдены\"}");
         }
         return ResponseEntity.status(HttpStatus.OK).body(jsonResult);
