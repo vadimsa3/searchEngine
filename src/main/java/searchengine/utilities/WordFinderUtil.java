@@ -84,12 +84,13 @@ public class WordFinderUtil {
     }
 
     public String getTextSnippetWithSelectLemma(String newSortedSnippets, List<String> requestList) {
-        queueSnippets.clear();
+        System.out.println(requestList);
         queueSnippets.add(newSortedSnippets);
         requestList.forEach(searchLemma -> {
             String queueSnippet = queueSnippets.poll();
             assert queueSnippet != null;
-            queueSnippets.add(queueSnippet.replaceAll(searchLemma, "<b> ".concat(searchLemma).concat(" </b>")));
+            queueSnippets.add(queueSnippet
+                    .replaceAll(searchLemma, "<b> ".concat(searchLemma).concat(" </b>")));
         });
         return queueSnippets.poll();
     }

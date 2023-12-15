@@ -72,9 +72,12 @@ public class ApiController {
         if (query == null || query.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("{\"result\": false, \"error\": \"Задан пустой поисковый запрос\"}");
-        } else {
-            String jsonResult = searchService.beginSearch(query, site, offset, limit);
-            return ResponseEntity.status(HttpStatus.OK).body(jsonResult);
         }
+        String jsonResult = searchService.beginSearch(query, site, offset, limit);
+        if (jsonResult == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"result\": false, \"error\": \"Результаты по запросу не найдены\"}");
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(jsonResult);
     }
 }

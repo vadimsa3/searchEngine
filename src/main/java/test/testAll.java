@@ -12,18 +12,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
-import searchengine.model.PageModel;
-import searchengine.repositories.PageRepository;
-import searchengine.repositories.SiteRepository;
 import searchengine.services.SearchServiceImpl;
 import searchengine.services.SiteIndexingServiceImpl;
 import searchengine.utilities.LemmaFinderUtil;
-import searchengine.utilities.ParserSiteUtil;
 import searchengine.utilities.WordFinderUtil;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class testAll {
 
@@ -189,7 +184,7 @@ public class testAll {
                 "встречку и врезалась в машину. К сожалению, без трагедий обойтись не удалось. " +
                 "В результате ДТП, 45-летний житель Дзержинского района, водитель грузовика от полученных травм " +
                 "скончался в больнице во вторник.";
-        List<String> requestList = Arrays.asList("района", "выехала", "занесло", "травм");
+        List<String> requestList = List.of("Фура при опережении попутной автомашины");
         WordFinderUtil wordFinderUtil = null;
         try {
             wordFinderUtil = new WordFinderUtil();

@@ -58,6 +58,9 @@ public class SearchServiceImpl implements SearchService {
                 siteFromQuery);
         log.info("В репозитории найдено соответствующих запросу лемм: " + listLemmaModelsFromRepository.size());
         Map<Integer, List<PageModel>> mapLemmasAndPages = getPagesByLemmaModel(listLemmaModelsFromRepository);
+        if (listLemmaModelsFromRepository.isEmpty() || mapLemmasAndPages.isEmpty()) {
+            return null;
+        }
         Map<Integer, List<PageModel>> sortedMapLemmasByFrequencyOnPages = getSortedLemmasByFrequencyOnPages(mapLemmasAndPages);
         List<IndexModel> matchingSearchIndexesModels = getListMatchingIndexes(sortedMapLemmasByFrequencyOnPages);
         Map<Integer, Double> pageRelevenceMap = calculateMaxPageRelevance(matchingSearchIndexesModels);
