@@ -94,7 +94,8 @@ public class WordFinderUtil {
                         }
                     }
                     return word;
-                }).collect(Collectors.joining(" "));
+                })
+                .collect(Collectors.joining(" "));
     }
 
     private String getWordWithoutEnding(String word) {
