@@ -86,8 +86,9 @@ public class WordFinderUtil {
         return Arrays.stream(newSortedSnippets.split("\\s"))
                 .map(word -> {
                     for (String requestWord : requestList) {
-                        if (word.toLowerCase().contains(getWordWithoutEnding(requestWord))) {
-                            return "<b> " .concat(word).concat(" </b>");
+                        if (word.toLowerCase().contains(requestWord) ||
+                                word.toLowerCase().startsWith(getWordWithoutEnding(requestWord))) {
+                            return "<b>" .concat(word).concat("</b>");
                         }
                     }
                     return word;
