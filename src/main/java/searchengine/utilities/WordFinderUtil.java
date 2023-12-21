@@ -41,8 +41,10 @@ public class WordFinderUtil {
         }
         return snippetsOnPage.isEmpty()
                 ? null
-                : getTextSnippetWithSelectLemma(snippetsOnPage.entrySet().stream()
-                .max(Map.Entry.comparingByValue()).orElse(null).getKey().toLowerCase(), requestList);
+                : getTextSnippetWithSelectLemma(Objects.requireNonNull(
+                snippetsOnPage.entrySet().stream()
+                        .max(Map.Entry.comparingByValue())
+                        .orElse(null)).getKey().toLowerCase(), requestList);
     }
 
     public Set<Integer> getIndexesLemmaInText(String onlyTextPage, String lemma) {
