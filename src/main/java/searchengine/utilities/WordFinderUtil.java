@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class WordFinderUtil {
@@ -84,13 +85,24 @@ public class WordFinderUtil {
     }
 
     public String getTextSnippetWithSelectLemma(String newSortedSnippets, List<String> requestList) {
-        queueSnippets.add(newSortedSnippets);
-        requestList.forEach(searchLemma -> {
-            String queueSnippet = queueSnippets.poll();
-            assert queueSnippet != null;
-            queueSnippets.add(queueSnippet
-                    .replaceAll(searchLemma, "<b> ".concat(searchLemma).concat(" </b>")));
-        });
-        return queueSnippets.poll();
+        return Arrays.stream(newSortedSnippets.split("\\s"))
+                .map(word -> {
+                    for (String requestWord : requestList) {
+                        if (word.toLowerCase().contains(getWordWithoutEnding(requestWord))) {
+                            return "<b> " .concat(word).concat(" </b>");
+                        }
+                    }
+                    return word;
+                }).collect(Collectors.joining(" "));
+    }
+
+    private String getWordWithoutEnding(String word) {
+        StringBuilder charBox = new StringBuilder();
+        int counter = 0;
+        while (counter < word.length() - 2) {
+            charBox.append(word.charAt(counter));
+            counter += 1;
+        }
+        return charBox.toString();
     }
 }
