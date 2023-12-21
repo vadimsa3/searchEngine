@@ -14,8 +14,6 @@ public class WordFinderUtil {
 
     private final LemmaFinderUtil lemmaFinderUtil;
 
-    Queue<String> queueSnippets = new LinkedList<>();
-
     public WordFinderUtil() throws IOException {
         lemmaFinderUtil = new LemmaFinderUtil();
     }
